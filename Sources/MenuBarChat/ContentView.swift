@@ -208,6 +208,19 @@ struct MessageView: View {
 
     private var needsFold: Bool { reasoningLines.count > 5 }
 
+    private var foldLabel: String {
+        let suffix: String
+        if let index = chat.messages.firstIndex(where: { $0.id == message.id }),
+           let userIndex = chat.messages[..<index].lastIndex(where: { $0.role == .user }),
+           let page = chat.messages[userIndex].pages.first(where: { $0.error == nil }),
+           page.id > 0 {
+            suffix = ", ID\(page.id)"
+        } else {
+            suffix = ""
+        }
+        return (message.isReasoningExpanded ? "Less" : "More") + suffix
+    }
+
     private var displayedReasoning: String {
         guard needsFold, !message.isReasoningExpanded else { return message.reasoning }
         return reasoningLines.prefix(5).joined(separator: "\n")
@@ -224,7 +237,7 @@ struct MessageView: View {
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
                         if needsFold {
-                            Button(message.isReasoningExpanded ? "Less" : "More") {
+                            Button(foldLabel) {
                                 if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
                                     chat.messages[index].isReasoningExpanded.toggle()
                                 }
@@ -241,31 +254,31 @@ struct MessageView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 if !message.text.isEmpty {
-                    Text(message.text)
-                        .textSelection(.enabled)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            message.role == .user
-                                ? Color.accentColor.opacity(0.2)
-                                : Color(nsColor: .controlBackgroundColor)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(alignment: .topTrailing) {
-                            if message.role == .assistant {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(message.text)
+                            .textSelection(.enabled)
+                        if message.role == .assistant {
+                            HStack {
+                                Spacer(minLength: 0)
                                 Button {
                                     chat.copyAnswer(message)
                                 } label: {
                                     Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
-                                        .padding(5)
-                                        .background(Color(nsColor: .controlBackgroundColor).opacity(0.9))
-                                        .clipShape(RoundedRectangle(cornerRadius: 6))
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        message.role == .user
+                            ? Color.accentColor.opacity(0.2)
+                            : Color(nsColor: .controlBackgroundColor)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 if let prompt = message.promptTokens, let completion = message.completionTokens {
                     Text("↑\(prompt) ↓\(completion)")
