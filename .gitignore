@@ -12,6 +12,3 @@ build/
 # 로컬 에이전트 도구 구성
 .agents/
 .claude/
-
-# OpenSpec 로컬 구성
-openspec/config.yaml
