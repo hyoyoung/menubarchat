@@ -217,6 +217,11 @@ struct MessageView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
+                if !message.pages.isEmpty {
+                    Label(message.pages.map(\.host).joined(separator: ", "), systemImage: "link")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
             if message.role == .assistant { Spacer(minLength: 48) }
         }

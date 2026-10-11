@@ -1,5 +1,10 @@
 import Foundation
 
+struct FetchedPage: Equatable {
+    let host: String
+    let text: String
+}
+
 struct Message: Identifiable, Equatable {
     let id = UUID()
     let role: Role
@@ -7,6 +12,7 @@ struct Message: Identifiable, Equatable {
     var reasoning = ""
     var promptTokens: Int?
     var completionTokens: Int?
+    var pages: [FetchedPage] = []
 
     enum Role: String {
         case user, assistant
@@ -57,6 +63,7 @@ final class ChatModel: ObservableObject {
         showsSettings = false
 
         streamTask = Task {
+            await fetchPagesForLastUserMessage()
             await stream()
             isStreaming = false
             streamTask = nil
@@ -70,6 +77,45 @@ final class ChatModel: ObservableObject {
     func clear() {
         stop()
         messages.removeAll()
+    }
+
+    private func fetchPagesForLastUserMessage() async {
+        guard let index = messages.indices.last, messages[index].role == .user else { return }
+        for url in Self.urls(in: messages[index].text).prefix(2) {
+            if Task.isCancelled { return }
+            guard let page = await Self.fetchPage(url) else { continue }
+            guard messages.indices.contains(index), messages[index].role == .user else { return }
+            messages[index].pages.append(page)
+        }
+    }
+
+    private static func urls(in text: String) -> [URL] {
+        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        let range = NSRange(text.startIndex..., in: text)
+        return (detector?.matches(in: text, range: range) ?? [])
+            .compactMap(\.url)
+            .filter { $0.scheme == "http" || $0.scheme == "https" }
+    }
+
+    private static func fetchPage(_ url: URL) async -> FetchedPage? {
+        guard let host = url.host() else { return nil }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 15
+        request.setValue(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+            forHTTPHeaderField: "User-Agent"
+        )
+        guard
+            let (data, response) = try? await URLSession.shared.data(for: request),
+            let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode)
+        else { return nil }
+        let text = ((try? NSAttributedString(
+            html: data,
+            options: [.documentType: NSAttributedString.DocumentType.html],
+            documentAttributes: nil
+        ))?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        return FetchedPage(host: host, text: String(text.prefix(20_000)))
     }
 
     private func stream() async {
@@ -90,7 +136,13 @@ final class ChatModel: ObservableObject {
             "stream": true,
             // Always-thinking models (glm-5.x) reject "type"; the budget field sets the level.
             "thinking": ["budget": thinkingBudget],
-            "messages": messages.map { ["role": $0.role.rawValue, "content": $0.text] },
+            "messages": messages.map { message in
+                var content = message.text
+                for page in message.pages {
+                    content += "\n\n[Web page content — \(page.host)]\n\(page.text)"
+                }
+                return ["role": message.role.rawValue, "content": content]
+            },
         ]
         if webSearch {
             payload["tools"] = [["type": "web_search", "web_search": ["enable": true, "search_result": true]]]
