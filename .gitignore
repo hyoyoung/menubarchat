@@ -1,0 +1,8 @@
+# Swift Package Manager
+.build/
+
+# make-app.sh 출력
+build/
+
+# macOS
+.DS_Store
