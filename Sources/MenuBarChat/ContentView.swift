@@ -305,16 +305,20 @@ struct MessageView: View {
                             Text(message.text)
                                 .textSelection(.enabled)
                         }
-                        HStack {
-                            Spacer(minLength: 0)
-                            Button {
-                                chat.copyAnswer(message)
-                            } label: {
-                                Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                        if message.role == .assistant
+                            || chat.hoveredMessageID == message.id
+                            || chat.copiedMessageID == message.id {
+                            HStack {
+                                Spacer(minLength: 0)
+                                Button {
+                                    chat.copyAnswer(message)
+                                } label: {
+                                    Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 12)
@@ -325,6 +329,11 @@ struct MessageView: View {
                             : Color(nsColor: .controlBackgroundColor)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .onHover { hovering in
+                        if message.role == .user {
+                            chat.hoveredMessageID = hovering ? message.id : nil
+                        }
+                    }
                 }
                 if let prompt = message.promptTokens, let completion = message.completionTokens {
                     Text("↑\(prompt) ↓\(completion)")

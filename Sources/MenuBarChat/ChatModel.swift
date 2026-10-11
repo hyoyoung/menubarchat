@@ -42,6 +42,7 @@ final class ChatModel: ObservableObject {
     @Published var isStreaming = false
     @Published var isFetchingPage = false
     @Published var copiedMessageID: UUID?
+    @Published var hoveredMessageID: UUID?
     private var nextAttachmentID = 1
     @Published var showsSettings = false
 
