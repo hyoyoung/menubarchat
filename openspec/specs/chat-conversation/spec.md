@@ -75,6 +75,20 @@ SSE로 응답을 스트리밍하며, `reasoning_content` 델타는 답변 위에
 - **WHEN** 답변 말풍선 하단의 복사 아이콘을 클릭하면
 - **THEN** 답변 전문이 클립보드에 복사되고 아이콘이 잠시 체크로 바뀐다
 
+### Requirement: URL 단독 입력 처리
+사용자 메시지가 URL 하나뿐이면 그 메시지가 마지막 메시지인 요청의
+`content` 끝에 `[Instruction: <지시문>]`을 덧붙인다. 지시문 기본값은
+`summarize it`이며 설정에서 편집한다. 비어 있으면 덧붙이지 않는다.
+말풍선 표시는 URL 원문 그대로다.
+
+#### Scenario: URL만 입력
+- **WHEN** 사용자가 URL만 붙여넣어 보내면
+- **THEN** 요청에 기본 지시문(summarize it)이 포함되어 모델이 요약으로 답한다
+
+#### Scenario: 지시문 변경
+- **WHEN** 설정에서 지시문을 "translate to Korean"으로 바꾸고 URL만 보내면
+- **THEN** 모델이 번역으로 답한다
+
 ### Requirement: 지우기
 휴지통 버튼을 클릭하면 대화를 모두 지운다.
 

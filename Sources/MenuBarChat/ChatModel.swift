@@ -48,6 +48,7 @@ final class ChatModel: ObservableObject {
     @Published var model: String { didSet { UserDefaults.standard.set(model, forKey: "model") } }
     @Published var thinkingBudget: String { didSet { UserDefaults.standard.set(thinkingBudget, forKey: "thinkingBudget") } }
     @Published var webSearch: Bool { didSet { UserDefaults.standard.set(webSearch, forKey: "webSearch") } }
+    @Published var urlHandling: String { didSet { UserDefaults.standard.set(urlHandling, forKey: "urlHandling") } }
 
     private var streamTask: Task<Void, Never>?
 
@@ -60,6 +61,7 @@ final class ChatModel: ObservableObject {
         model = defaults.string(forKey: "model") ?? "glm-5.3-flash"
         thinkingBudget = defaults.string(forKey: "thinkingBudget") ?? "high"
         webSearch = (defaults.object(forKey: "webSearch") as? Bool) ?? false
+        urlHandling = defaults.string(forKey: "urlHandling") ?? "summarize it"
     }
 
     func send() {
@@ -220,20 +222,31 @@ final class ChatModel: ObservableObject {
         })
     }
 
+    private static func isURLOnly(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = urls(in: trimmed).first else { return false }
+        return url.absoluteString == trimmed
+    }
+
     private func apiContent(for message: Message, isLast: Bool) -> String {
         var content = message.text
         let pages = message.pages.filter { $0.error == nil }
-        guard !pages.isEmpty else { return content }
         if isLast {
-            for page in pages {
-                content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+            if !pages.isEmpty {
+                for page in pages {
+                    content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+                }
+                let mentioned = mentionedPageIDs()
+                let ownIDs = Set(pages.map(\.id))
+                for page in messages.flatMap(\.pages) where mentioned.contains(page.id) && !ownIDs.contains(page.id) {
+                    content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+                }
             }
-            let mentioned = mentionedPageIDs()
-            let ownIDs = Set(pages.map(\.id))
-            for page in messages.flatMap(\.pages) where mentioned.contains(page.id) && !ownIDs.contains(page.id) {
-                content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+            let instruction = urlHandling.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !instruction.isEmpty, Self.isURLOnly(message.text) {
+                content += "\n\n[Instruction: \(instruction)]"
             }
-        } else {
+        } else if !pages.isEmpty {
             for page in pages {
                 content += "\n\n[Page ID\(page.id) (\(page.host)) — mention \"ID\(page.id)\" to re-include]"
             }

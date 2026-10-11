@@ -158,6 +158,7 @@ struct SettingsView: View {
             }
             Toggle("Web search", isOn: $chat.webSearch)
                 .toggleStyle(.switch)
+            TextField("http/https default handling", text: $chat.urlHandling)
         }
         .textFieldStyle(.roundedBorder)
         .font(.callout)
