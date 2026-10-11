@@ -162,20 +162,29 @@ struct MessageView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 if !message.text.isEmpty {
                     Text(message.text)
                         .textSelection(.enabled)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            message.role == .user
+                                ? Color.accentColor.opacity(0.2)
+                                : Color(nsColor: .controlBackgroundColor)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                if let prompt = message.promptTokens, let completion = message.completionTokens {
+                    Text("↑\(prompt) ↓\(completion)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                message.role == .user
-                    ? Color.accentColor.opacity(0.2)
-                    : Color(nsColor: .controlBackgroundColor)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
             if message.role == .assistant { Spacer(minLength: 48) }
         }
     }

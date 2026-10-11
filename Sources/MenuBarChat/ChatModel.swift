@@ -5,6 +5,8 @@ struct Message: Identifiable, Equatable {
     let role: Role
     var text: String
     var reasoning = ""
+    var promptTokens: Int?
+    var completionTokens: Int?
 
     enum Role: String {
         case user, assistant
@@ -116,24 +118,42 @@ final class ChatModel: ObservableObject {
         }
     }
 
-    private func appendToAssistant(_ delta: (reasoning: String, content: String)) {
+    private struct Delta {
+        var reasoning = ""
+        var content = ""
+        var promptTokens: Int?
+        var completionTokens: Int?
+    }
+
+    private func appendToAssistant(_ delta: Delta) {
         if let last = messages.last, last.role == .assistant {
             messages[messages.count - 1].reasoning += delta.reasoning
             messages[messages.count - 1].text += delta.content
+            if let prompt = delta.promptTokens { messages[messages.count - 1].promptTokens = prompt }
+            if let completion = delta.completionTokens { messages[messages.count - 1].completionTokens = completion }
         } else {
-            messages.append(Message(role: .assistant, text: delta.content, reasoning: delta.reasoning))
+            var message = Message(role: .assistant, text: delta.content, reasoning: delta.reasoning)
+            message.promptTokens = delta.promptTokens
+            message.completionTokens = delta.completionTokens
+            messages.append(message)
         }
     }
 
-    private static func decodeDelta(_ string: String) -> (reasoning: String, content: String)? {
-        guard
-            let object = try? JSONSerialization.jsonObject(with: Data(string.utf8)) as? [String: Any],
-            let choices = object["choices"] as? [[String: Any]],
-            let delta = choices.first?["delta"] as? [String: Any]
+    private static func decodeDelta(_ string: String) -> Delta? {
+        guard let object = try? JSONSerialization.jsonObject(with: Data(string.utf8)) as? [String: Any]
         else { return nil }
-        let reasoning = delta["reasoning_content"] as? String ?? ""
-        let content = delta["content"] as? String ?? ""
-        if reasoning.isEmpty && content.isEmpty { return nil }
-        return (reasoning, content)
+        var delta = Delta()
+        if let choices = object["choices"] as? [[String: Any]],
+           let message = choices.first?["delta"] as? [String: Any] {
+            delta.reasoning = message["reasoning_content"] as? String ?? ""
+            delta.content = message["content"] as? String ?? ""
+        }
+        if let usage = object["usage"] as? [String: Any] {
+            delta.promptTokens = usage["prompt_tokens"] as? Int
+            delta.completionTokens = usage["completion_tokens"] as? Int
+        }
+        if delta.reasoning.isEmpty && delta.content.isEmpty
+            && delta.promptTokens == nil && delta.completionTokens == nil { return nil }
+        return delta
     }
 }
