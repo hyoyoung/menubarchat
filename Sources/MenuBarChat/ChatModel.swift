@@ -35,6 +35,7 @@ final class ChatModel: ObservableObject {
     @Published var messages: [Message] = []
     @Published var draft = ""
     @Published var isStreaming = false
+    @Published var isFetchingPage = false
     @Published var showsSettings = false
 
     @Published var apiKey: String { didSet { UserDefaults.standard.set(apiKey, forKey: "apiKey") } }
@@ -85,6 +86,8 @@ final class ChatModel: ObservableObject {
         guard let index = messages.indices.last, messages[index].role == .user else { return }
         guard let url = Self.urls(in: messages[index].text).first else { return }
         if Task.isCancelled { return }
+        isFetchingPage = true
+        defer { isFetchingPage = false }
         let page = await Self.fetchPage(url)
         if Task.isCancelled { return }
         guard messages.indices.contains(index), messages[index].role == .user else { return }
@@ -115,11 +118,7 @@ final class ChatModel: ObservableObject {
                 return FetchedPage(host: host, text: "", imageURL: nil, error: "HTTP \(http.statusCode)")
             }
             let html = String(data: data, encoding: .utf8) ?? ""
-            let text = ((try? NSAttributedString(
-                html: data,
-                options: [.documentType: NSAttributedString.DocumentType.html],
-                documentAttributes: nil
-            ))?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let text = await Self.plainText(fromHTML: html)
             guard !text.isEmpty else {
                 return FetchedPage(host: host, text: "", imageURL: nil, error: "no content")
             }
@@ -141,6 +140,54 @@ final class ChatModel: ObservableObject {
               let close = html[open...].range(of: "\"")
         else { return nil }
         return URL(string: String(html[open..<close.lowerBound]))
+    }
+
+    // WebKit's HTML importer can stall its caller, so it runs off the main
+    // actor behind a timeout; if it yields nothing we fall back to a tag strip.
+    private static func plainText(fromHTML html: String) async -> String {
+        let source = String(html.prefix(500_000))
+        let importer = Task.detached(priority: .utility) { () -> String in
+            ((try? NSAttributedString(
+                html: Data(source.utf8),
+                options: [.documentType: NSAttributedString.DocumentType.html],
+                documentAttributes: nil
+            ))?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        let converted: String? = await withTaskGroup(of: String?.self) { group in
+            group.addTask { await importer.value }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            importer.cancel()
+            return first
+        }
+        if let converted, !converted.isEmpty { return converted }
+        return stripTags(source)
+    }
+
+    private static func stripTags(_ html: String) -> String {
+        var text = html
+        for tag in ["script", "style", "head"] {
+            while let open = text.range(of: "<\(tag)"),
+                  let close = text[open.upperBound...].range(of: "</\(tag)>") {
+                text.removeSubrange(open.lowerBound..<close.upperBound)
+            }
+        }
+        var result = ""
+        var inTag = false
+        for character in text {
+            if character == "<" { inTag = true }
+            else if character == ">" { inTag = false }
+            else if !inTag { result.append(character) }
+        }
+        let entities = ["&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&#39;": "'", "&nbsp;": " "]
+        for (entity, replacement) in entities {
+            result = result.replacingOccurrences(of: entity, with: replacement)
+        }
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func stream() async {

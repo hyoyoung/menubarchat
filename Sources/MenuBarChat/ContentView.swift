@@ -55,6 +55,21 @@ struct ContentView: View {
                             ForEach(chat.messages) { message in
                                 MessageView(message: message)
                                     .id(message.id)
+                                if message.role == .user,
+                                   chat.messages.last?.id == message.id,
+                                   chat.isFetchingPage {
+                                    HStack(spacing: 6) {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                        Text("페이지 가져오는 중…")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
                             }
                         }
                         .padding(14)
