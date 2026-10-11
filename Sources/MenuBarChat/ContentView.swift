@@ -118,15 +118,15 @@ struct ContentView: View {
 }
 
 struct SettingsView: View {
-    @EnvironmentObject private var chat: ChatModel
+    @EnvironmentObject private var settings: SettingsStore
 
     private let modelPresets = ["glm-5.3-flash", "glm-5.3", "glm-4.6"]
     private let thinkingBudgets = ["low", "medium", "high", "max"]
 
     private var modelSelection: Binding<String> {
         Binding(
-            get: { modelPresets.contains(chat.model) ? chat.model : "" },
-            set: { if !$0.isEmpty { chat.model = $0 } }
+            get: { modelPresets.contains(settings.model) ? settings.model : "" },
+            set: { settings.model = $0 }
         )
     }
 
@@ -134,11 +134,11 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("API key")
-                SecureField("Z.AI API key", text: $chat.apiKey)
+                SecureField("Z.AI API key", text: $settings.apiKey)
             }
             HStack {
                 Text("Base URL")
-                TextField("https://api.z.ai/api/coding/paas/v4", text: $chat.baseURL)
+                TextField("https://api.z.ai/api/coding/paas/v4", text: $settings.baseURL)
             }
             HStack {
                 Text("Model")
@@ -151,22 +151,22 @@ struct SettingsView: View {
                 .labelsHidden()
             }
             if modelSelection.wrappedValue.isEmpty {
-                TextField("Model name", text: $chat.model)
+                TextField("Model name", text: $settings.model)
             }
             HStack {
                 Text("Thinking")
                 Spacer()
-                Picker("", selection: $chat.thinkingBudget) {
+                Picker("", selection: $settings.thinkingBudget) {
                     ForEach(thinkingBudgets, id: \.self) { Text($0) }
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
             }
-            Toggle("Web search", isOn: $chat.webSearch)
+            Toggle("Web search", isOn: $settings.webSearch)
                 .toggleStyle(.switch)
             HStack {
                 Text("URL handling")
-                TextField("http/https default handling", text: $chat.urlHandling)
+                TextField("http/https default handling", text: $settings.urlHandling)
             }
         }
         .textFieldStyle(.roundedBorder)

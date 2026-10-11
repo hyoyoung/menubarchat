@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let content = ContentView()
             .environmentObject(chat)
+            .environmentObject(chat.settings)
             .frame(width: 400, height: 520)
         panel = ChatPanel(contentViewController: NSHostingController(rootView: content))
         panel.styleMask = [.titled, .resizable, .fullSizeContentView, .nonactivatingPanel]
