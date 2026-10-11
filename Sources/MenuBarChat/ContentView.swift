@@ -212,6 +212,12 @@ struct MessageView: View {
     let message: Message
     @EnvironmentObject private var chat: ChatModel
 
+    private static func markdown(_ text: String) -> AttributedString {
+        var options = AttributedString.MarkdownParsingOptions()
+        options.interpretedSyntax = .inlineOnlyPreservingWhitespace
+        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
+    }
+
     private var reasoningLines: [String] {
         message.reasoning.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
     }
@@ -301,6 +307,9 @@ struct MessageView: View {
                             .italic()
                             .foregroundStyle(.secondary)
                             .buttonStyle(.plain)
+                        } else if message.role == .assistant {
+                            Text(Self.markdown(message.text))
+                                .textSelection(.enabled)
                         } else {
                             Text(message.text)
                                 .textSelection(.enabled)

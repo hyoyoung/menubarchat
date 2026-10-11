@@ -36,9 +36,13 @@ final class ChatModel: ObservableObject {
     func send() {
         let prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty, !isStreaming else { return }
+        guard !settings.apiKey.trimmingCharacters(in: .whitespaces).isEmpty else {
+            messages.append(Message(role: .assistant, text: "Error: API key is empty — open settings"))
+            return
+        }
         draft = ""
         messages.append(Message(role: .user, text: prompt))
-        if let index = messages.indices.last, Self.isLongPaste(prompt) {
+        if let index = messages.indices.last, PromptComposer.isLongPaste(prompt) {
             messages[index].pasteID = nextAttachmentID
             nextAttachmentID += 1
         }
@@ -90,86 +94,14 @@ final class ChatModel: ObservableObject {
         messages[index].pages.append(page)
     }
 
-    private struct AttachmentRef {
-        let isWeb: Bool
-        let number: Int
-    }
-
-    private func mentionedAttachments() -> [AttachmentRef] {
-        guard let text = messages.last?.text,
-              let regex = try? NSRegularExpression(pattern: "ID(\\d+)(p?)")
-        else { return [] }
-        let range = NSRange(text.startIndex..., in: text)
-        return regex.matches(in: text, range: range).compactMap { match in
-            guard let number = Range(match.range(at: 1), in: text),
-                  let value = Int(text[number])
-            else { return nil }
-            let isPaste = Range(match.range(at: 2), in: text) != nil
-            return AttachmentRef(isWeb: !isPaste, number: value)
-        }
-    }
-
-    private static func isLongPaste(_ text: String) -> Bool {
-        text.split(separator: "\n", omittingEmptySubsequences: false).count > 10
-    }
-
-    private static func firstLine(of text: String) -> String {
-        let line = text.split(separator: "\n", omittingEmptySubsequences: true).first.map(String.init) ?? ""
-        return String(line.prefix(60))
-    }
-
-    private static func isURLOnly(_ text: String) -> Bool {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = PageFetcher.urls(in: trimmed).first else { return false }
-        return url.absoluteString == trimmed
-    }
-
-    private func apiContent(for message: Message, isLast: Bool) -> String {
-        let pages = message.pages.filter { $0.error == nil }
-        guard isLast else {
-            var content = message.text
-            if message.pasteID > 0 {
-                content = "[Text ID\(message.pasteID)p (\(Self.firstLine(of: message.text))) — mention \"ID\(message.pasteID)p\" to re-include]"
-            }
-            for page in pages {
-                content += "\n\n[Page ID\(page.id) (\(page.host)) — mention \"ID\(page.id)\" to re-include]"
-            }
-            return content
-        }
-        var content = message.text
-        if message.pasteID > 0 {
-            content = "[Pasted text ID\(message.pasteID)p]\n\(message.text)"
-        }
-        for page in pages {
-            content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
-        }
-        var includedPages = Set(pages.map(\.id))
-        var includedPastes: Set<Int> = [message.pasteID]
-        for ref in mentionedAttachments() {
-            if ref.isWeb {
-                guard !includedPages.contains(ref.number),
-                      let page = messages.flatMap(\.pages).first(where: { $0.error == nil && $0.id == ref.number })
-                else { continue }
-                includedPages.insert(ref.number)
-                content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
-            } else {
-                guard !includedPastes.contains(ref.number),
-                      let source = messages.first(where: { $0.pasteID == ref.number })
-                else { continue }
-                includedPastes.insert(ref.number)
-                content += "\n\n[Pasted text ID\(ref.number)p]\n\(source.text)"
-            }
-        }
-        let instruction = settings.urlHandling.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !instruction.isEmpty, Self.isURLOnly(message.text) || message.pasteID > 0 {
-            content += "\n\n[Instruction: \(instruction) — unless the user already asked something specific above]"
-        }
-        return content
-    }
-
     private func stream() async {
         let contents = messages.enumerated().map { index, message in
-            (role: message.role.rawValue, content: apiContent(for: message, isLast: index == messages.count - 1))
+            (role: message.role.rawValue, content: PromptComposer.apiContent(
+                messages: messages,
+                urlHandling: settings.urlHandling,
+                for: message,
+                isLast: index == messages.count - 1
+            ))
         }
         do {
             let deltas = LLMClient.stream(
