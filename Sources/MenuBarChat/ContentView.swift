@@ -105,11 +105,42 @@ struct ContentView: View {
 struct SettingsView: View {
     @EnvironmentObject private var chat: ChatModel
 
+    private let modelPresets = ["glm-5.3-flash", "glm-5.3", "glm-4.6"]
+    private let thinkingBudgets = ["low", "medium", "high", "max"]
+
+    private var modelSelection: Binding<String> {
+        Binding(
+            get: { modelPresets.contains(chat.model) ? chat.model : "" },
+            set: { if !$0.isEmpty { chat.model = $0 } }
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             SecureField("API key", text: $chat.apiKey)
             TextField("Base URL (OpenAI-compatible)", text: $chat.baseURL)
-            TextField("Model", text: $chat.model)
+            HStack {
+                Text("Model")
+                Spacer()
+                Picker("", selection: modelSelection) {
+                    ForEach(modelPresets, id: \.self) { Text($0) }
+                    Text("Custom…").tag("")
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+            }
+            if modelSelection.wrappedValue.isEmpty {
+                TextField("Model name", text: $chat.model)
+            }
+            HStack {
+                Text("Thinking")
+                Spacer()
+                Picker("", selection: $chat.thinkingBudget) {
+                    ForEach(thinkingBudgets, id: \.self) { Text($0) }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+            }
         }
         .textFieldStyle(.roundedBorder)
         .font(.callout)
