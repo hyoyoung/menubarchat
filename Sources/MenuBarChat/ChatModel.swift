@@ -61,7 +61,8 @@ final class ChatModel: ObservableObject {
         model = defaults.string(forKey: "model") ?? "glm-5.3-flash"
         thinkingBudget = defaults.string(forKey: "thinkingBudget") ?? "high"
         webSearch = (defaults.object(forKey: "webSearch") as? Bool) ?? false
-        urlHandling = defaults.string(forKey: "urlHandling") ?? "summarize it"
+        urlHandling = defaults.string(forKey: "urlHandling")
+            ?? "summarize it in \(Self.systemLanguageName)"
     }
 
     func send() {
@@ -97,6 +98,11 @@ final class ChatModel: ObservableObject {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             if copiedMessageID == message.id { copiedMessageID = nil }
         }
+    }
+
+    private static var systemLanguageName: String {
+        let code = Locale.current.language.languageCode?.identifier ?? "en"
+        return Locale(identifier: "en_US").localizedString(forLanguageCode: code) ?? "English"
     }
 
     private func fetchPagesForLastUserMessage() async {

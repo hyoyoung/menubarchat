@@ -20,8 +20,8 @@ handling" 지시문 필드를 제공한다.
 편집 즉시 `apiKey`, `baseURL`, `model`, `thinkingBudget`, `webSearch`,
 `urlHandling`을 UserDefaults에 저장하고 실행 시 불러온다. 저장된 값이
 없을 때 기본값: base URL `https://api.z.ai/api/coding/paas/v4`, 모델
-`glm-5.3-flash`, 사고 수준 `high`, 웹 검색 끔, URL 지시문 `summarize it`,
-API 키는 환경변수 `ZAI_API_KEY`(그 다음 `Z_AI_API_KEY`)에서 읽는다.
+`glm-5.3-flash`, 사고 수준 `high`, 웹 검색 끔, URL 지시문 `summarize it
+in <시스템 기본 언어>`, API 키는 환경변수 `ZAI_API_KEY`(그 다음 `Z_AI_API_KEY`)에서 읽는다.
 
 #### Scenario: 설정이 재실행 후에도 유지
 - **WHEN** 사용자가 모델을 수정하고 앱을 재시작하면

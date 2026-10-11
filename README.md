@@ -33,7 +33,8 @@ Click the gear icon in the panel:
 - **Web search** — off by default; adds Z.AI's built-in `web_search` tool so
   answers cite web sources. Keep it off to save tokens and latency.
 - **http/https default handling** — instruction appended when a message is
-  just a URL (default: `summarize it`); leave empty to disable.
+  just a URL (default: `summarize it in <system language>`); leave empty to
+  disable.
 
 The Z.AI API is OpenAI-compatible, so other endpoints still work if you change
 the base URL. Settings persist in UserDefaults; if no key is saved, the
