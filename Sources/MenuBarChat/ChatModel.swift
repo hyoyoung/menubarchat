@@ -1,6 +1,7 @@
 import Foundation
 
 struct FetchedPage: Equatable {
+    var id = 0
     let host: String
     let text: String
     let imageURL: URL?
@@ -37,6 +38,7 @@ final class ChatModel: ObservableObject {
     @Published var draft = ""
     @Published var isStreaming = false
     @Published var isFetchingPage = false
+    private var nextPageID = 1
     @Published var showsSettings = false
 
     @Published var apiKey: String { didSet { UserDefaults.standard.set(apiKey, forKey: "apiKey") } }
@@ -89,9 +91,13 @@ final class ChatModel: ObservableObject {
         if Task.isCancelled { return }
         isFetchingPage = true
         defer { isFetchingPage = false }
-        let page = await Self.fetchPage(url)
+        var page = await Self.fetchPage(url)
         if Task.isCancelled { return }
         guard messages.indices.contains(index), messages[index].role == .user else { return }
+        if page.error == nil {
+            page.id = nextPageID
+            nextPageID += 1
+        }
         messages[index].pages.append(page)
     }
 
@@ -191,6 +197,38 @@ final class ChatModel: ObservableObject {
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private func mentionedPageIDs() -> Set<Int> {
+        guard let text = messages.last?.text,
+              let regex = try? NSRegularExpression(pattern: "ID(\\d+)")
+        else { return [] }
+        let range = NSRange(text.startIndex..., in: text)
+        return Set(regex.matches(in: text, range: range).compactMap { match in
+            guard let r = Range(match.range(at: 1), in: text) else { return nil }
+            return Int(text[r])
+        })
+    }
+
+    private func apiContent(for message: Message, isLast: Bool) -> String {
+        var content = message.text
+        let pages = message.pages.filter { $0.error == nil }
+        guard !pages.isEmpty else { return content }
+        if isLast {
+            for page in pages {
+                content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+            }
+            let mentioned = mentionedPageIDs()
+            let ownIDs = Set(pages.map(\.id))
+            for page in messages.flatMap(\.pages) where mentioned.contains(page.id) && !ownIDs.contains(page.id) {
+                content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+            }
+        } else {
+            for page in pages {
+                content += "\n\n[Page ID\(page.id) (\(page.host)) — mention \"ID\(page.id)\" to re-include]"
+            }
+        }
+        return content
+    }
+
     private func stream() async {
         guard let url = URL(string: baseURL.trimmingCharacters(in: .whitespaces))?
             .appending(path: "chat/completions") else {
@@ -209,12 +247,8 @@ final class ChatModel: ObservableObject {
             "stream": true,
             // Always-thinking models (glm-5.x) reject "type"; the budget field sets the level.
             "thinking": ["budget": thinkingBudget],
-            "messages": messages.map { message in
-                var content = message.text
-                for page in message.pages where page.error == nil {
-                    content += "\n\n[Web page content — \(page.host)]\n\(page.text)"
-                }
-                return ["role": message.role.rawValue, "content": content]
+            "messages": messages.enumerated().map { index, message in
+                ["role": message.role.rawValue, "content": apiContent(for: message, isLast: index == messages.count - 1)]
             },
         ]
         if webSearch {

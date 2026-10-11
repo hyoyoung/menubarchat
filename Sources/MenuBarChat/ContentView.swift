@@ -295,7 +295,7 @@ struct PagePreview: View {
                     .frame(width: 56, height: 56)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(page.host)
+                        Text("ID\(page.id) · \(page.host)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         Text(firstLine)
