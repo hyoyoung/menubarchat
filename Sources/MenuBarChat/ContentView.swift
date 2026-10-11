@@ -221,10 +221,15 @@ struct MessageView: View {
     private var foldLabel: String {
         let suffix: String
         if let index = chat.messages.firstIndex(where: { $0.id == message.id }),
-           let userIndex = chat.messages[..<index].lastIndex(where: { $0.role == .user }),
-           let page = chat.messages[userIndex].pages.first(where: { $0.error == nil }),
-           page.id > 0 {
-            suffix = ", ID\(page.id)"
+           let userIndex = chat.messages[..<index].lastIndex(where: { $0.role == .user }) {
+            let userMessage = chat.messages[userIndex]
+            if let page = userMessage.pages.first(where: { $0.error == nil }), page.id > 0 {
+                suffix = ", ID\(page.id)"
+            } else if userMessage.pasteID > 0 {
+                suffix = ", ID\(userMessage.pasteID)p"
+            } else {
+                suffix = ""
+            }
         } else {
             suffix = ""
         }
