@@ -200,13 +200,25 @@ struct AboutView: View {
 
 struct MessageView: View {
     let message: Message
+    @EnvironmentObject private var chat: ChatModel
+
+    private var reasoningLines: [String] {
+        message.reasoning.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+    }
+
+    private var needsFold: Bool { reasoningLines.count > 5 }
+
+    private var displayedReasoning: String {
+        guard needsFold, !message.isReasoningExpanded else { return message.reasoning }
+        return reasoningLines.prefix(5).joined(separator: "\n") + "\n…"
+    }
 
     var body: some View {
         HStack {
             if message.role == .user { Spacer(minLength: 48) }
             VStack(alignment: .leading, spacing: 6) {
                 if !message.reasoning.isEmpty {
-                    Text(message.reasoning)
+                    Text(displayedReasoning)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
@@ -214,6 +226,13 @@ struct MessageView: View {
                         .padding(.vertical, 8)
                         .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            guard needsFold else { return }
+                            if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
+                                chat.messages[index].isReasoningExpanded.toggle()
+                            }
+                        }
                 }
                 if !message.text.isEmpty {
                     Text(message.text)

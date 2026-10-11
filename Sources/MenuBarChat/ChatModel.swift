@@ -15,6 +15,7 @@ struct Message: Identifiable, Equatable {
     var promptTokens: Int?
     var completionTokens: Int?
     var pages: [FetchedPage] = []
+    var isReasoningExpanded = false
 
     enum Role: String {
         case user, assistant
