@@ -7,11 +7,10 @@
 ## Requirements
 
 ### Requirement: 설정 필드
-패널 내 설정 섹션에 "API key", "Base URL" 라벨이 붙은 비밀 API 키 필드와
-base URL 필드, 모델 선택(프리셋
-`glm-5.3-flash`/`glm-5.3`/`glm-4.6` + `Custom…` 직접 입력), 사고(thinking)
-수준 선택(`low`/`medium`/`high`/`max`), 웹 검색 토글, "URL handling" 라벨이
-붙은 "http/https default handling" 지시문 필드를 제공한다.
+패널 내 설정 섹션에 "API key" 비밀 필드, "Base URL" 필드, 모델 선택(프리셋
+`glm-5.3-flash`/`glm-5.3`/`glm-4.6` + `Custom…` 직접 입력), 사고 수준
+선택(`low`/`medium`/`high`/`max`), 웹 검색 토글, "URL handling" 지시문
+필드를 제공한다.
 
 #### Scenario: 프리셋 없는 모델 직접 입력
 - **WHEN** 모델 선택에서 "Custom…"을 고르고 모델 이름을 입력하면
@@ -19,14 +18,10 @@ base URL 필드, 모델 선택(프리셋
 
 ### Requirement: 영속화
 편집 즉시 `apiKey`, `baseURL`, `model`, `thinkingBudget`, `webSearch`,
-`urlHandling`을 UserDefaults에 저장하고 실행 시 불러온다. 저장된 값이
-없을 때 기본값: base URL `https://api.z.ai/api/coding/paas/v4`, 모델
-`glm-5.3-flash`, 사고 수준 `high`, 웹 검색 끔, URL 지시문 `summarize it
-in <시스템 기본 언어>`, API 키는 환경변수 `ZAI_API_KEY`(그 다음 `Z_AI_API_KEY`)에서 읽는다.
-
-#### Scenario: 설정이 재실행 후에도 유지
-- **WHEN** 사용자가 모델을 수정하고 앱을 재시작하면
-- **THEN** 수정한 모델이 그대로 적용되어 있다
+`urlHandling`을 UserDefaults에 저장하고 실행 시 불러온다. 기본값: base
+URL `https://api.z.ai/api/coding/paas/v4`, 모델 `glm-5.3-flash`, 사고 수준
+`high`, 웹 검색 끔, URL 지시문 `summarize it in <시스템 기본 언어>`, API
+키는 환경변수 `ZAI_API_KEY`(그 다음 `Z_AI_API_KEY`).
 
 ### Requirement: 설정 표시 여부
 기어 버튼으로 설정 섹션을 토글하며, 열려 있는 동안 채워진 기어
