@@ -16,9 +16,9 @@ MenuBarChat은 Z.AI GLM 모델과 토큰 단위 스트리밍으로 대화하는 
 
 - 소스에서 바로 실행: `swift run`
 - 디버그 빌드: `swift build`
-- 스펙 점검 + 앱 빌드: `./openspec-build.sh` (스펙 구조를 확인한 뒤
-  make-app.sh를 호출)
-- 독립 앱 번들 빌드: `./make-app.sh` → `build/MenuBarChat.app`
+- 스펙 점검 + 앱 빌드: `./openspec-all-build.sh` (스펙 구조를 확인한 뒤
+  make-only-app.sh를 호출)
+- 독립 앱 번들 빌드: `./make-only-app.sh` → `build/MenuBarChat.app`
   (릴리스 바이너리 + `LSUIElement` 포함 `Info.plist`, 미서명, 로컬 용도)
 
 ## 레이아웃

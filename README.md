@@ -41,7 +41,7 @@ app) and relaunch.
 ## Build a standalone app
 
 ```sh
-./make-app.sh
+./make-only-app.sh
 open build/MenuBarChat.app
 ```
 

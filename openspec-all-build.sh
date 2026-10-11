@@ -1,6 +1,6 @@
 #!/bin/bash
 # openspec → 앱 빌드 파이프라인
-# 스펙 상태를 점검한 뒤 make-app.sh를 호출해 앱을 빌드한다.
+# 스펙 상태를 점검한 뒤 make-only-app.sh를 호출해 앱을 빌드한다.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -41,8 +41,8 @@ if [ "$fail" -ne 0 ]; then
 fi
 
 echo
-echo "== 앱 빌드 (make-app.sh 호출) =="
-./make-app.sh
+echo "== 앱 빌드 (make-only-app.sh 호출) =="
+./make-only-app.sh
 
 echo
 echo "== 앱 실행 =="

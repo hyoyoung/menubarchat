@@ -1,7 +1,7 @@
 # Swift Package Manager
 .build/
 
-# make-app.sh 출력
+# make-only-app.sh 출력
 build/
 
 # macOS
