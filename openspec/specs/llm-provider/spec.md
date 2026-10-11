@@ -14,7 +14,7 @@ messages: [{role, content}]}` JSON이다.
 
 #### Scenario: 기본 구성
 - **WHEN** 저장된 설정이 없으면
-- **THEN** 요청은 glm-5.3 모델로 Z.AI 코딩 엔드포인트를 대상으로 한다
+- **THEN** 요청은 glm-5.3-flash 모델로 Z.AI 코딩 엔드포인트를 대상으로 한다
 
 ### Requirement: 사고(thinking) 예산
 `{"budget": "low"}`로 사고를 요청하며, 상시 사고 모델(glm-5.x)이 1210

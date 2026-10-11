@@ -26,7 +26,7 @@ Click the gear icon in the panel:
 - **Base URL** — `https://api.z.ai/api/coding/paas/v4` (default; GLM Coding Plan
   quota). Use `https://api.z.ai/api/paas/v4` instead if your key is a
   pay-as-you-go API key.
-- **Model** — e.g. `glm-5.3` (default), `glm-5.3-flash`, `glm-4.6`
+- **Model** — e.g. `glm-5.3-flash` (default), `glm-5.3`, `glm-4.6`
 
 The Z.AI API is OpenAI-compatible, so other endpoints still work if you change
 the base URL. Settings persist in UserDefaults; if no key is saved, the
