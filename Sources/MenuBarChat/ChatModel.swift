@@ -33,6 +33,7 @@ final class ChatModel: ObservableObject {
     @Published var baseURL: String { didSet { UserDefaults.standard.set(baseURL, forKey: "baseURL") } }
     @Published var model: String { didSet { UserDefaults.standard.set(model, forKey: "model") } }
     @Published var thinkingBudget: String { didSet { UserDefaults.standard.set(thinkingBudget, forKey: "thinkingBudget") } }
+    @Published var webSearch: Bool { didSet { UserDefaults.standard.set(webSearch, forKey: "webSearch") } }
 
     private var streamTask: Task<Void, Never>?
 
@@ -44,6 +45,7 @@ final class ChatModel: ObservableObject {
         baseURL = defaults.string(forKey: "baseURL") ?? "https://api.z.ai/api/coding/paas/v4"
         model = defaults.string(forKey: "model") ?? "glm-5.3-flash"
         thinkingBudget = defaults.string(forKey: "thinkingBudget") ?? "high"
+        webSearch = (defaults.object(forKey: "webSearch") as? Bool) ?? true
     }
 
     func send() {
@@ -83,13 +85,16 @@ final class ChatModel: ObservableObject {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 300
 
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "model": model,
             "stream": true,
             // Always-thinking models (glm-5.x) reject "type"; the budget field sets the level.
             "thinking": ["budget": thinkingBudget],
             "messages": messages.map { ["role": $0.role.rawValue, "content": $0.text] },
         ]
+        if webSearch {
+            payload["tools"] = [["type": "web_search", "web_search": ["enable": true, "search_result": true]]]
+        }
         request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
 
         do {

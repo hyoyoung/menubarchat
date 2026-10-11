@@ -18,6 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        installMainMenu()
+
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "ellipsis.bubble", accessibilityDescription: "MenuBarChat")
         statusItem.button?.target = self
@@ -51,6 +53,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aboutPanel.level = .floating
         aboutPanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         aboutPanel.setFrame(NSRect(x: 0, y: 0, width: 300, height: 340), display: false)
+    }
+
+    // Without a main menu, Edit key equivalents (Cmd+C/V/X/A/Z) never reach the text field.
+    private func installMainMenu() {
+        let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        let editItem = NSMenuItem()
+        editItem.submenu = editMenu
+        let mainMenu = NSMenu()
+        mainMenu.addItem(editItem)
+        NSApp.mainMenu = mainMenu
     }
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {

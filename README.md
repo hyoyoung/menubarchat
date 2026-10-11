@@ -30,6 +30,8 @@ Click the gear icon in the panel:
   custom name via "Custom…"
 - **Thinking level** — `low`, `medium`, `high` (default), `max` — sent as the
   API's `thinking.budget`. GLM-5.3 models cannot disable thinking.
+- **Web search** — on by default; adds Z.AI's built-in `web_search` tool so
+  answers cite web sources. Turn it off to save tokens and latency.
 
 The Z.AI API is OpenAI-compatible, so other endpoints still work if you change
 the base URL. Settings persist in UserDefaults; if no key is saved, the

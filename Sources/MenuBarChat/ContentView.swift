@@ -141,6 +141,8 @@ struct SettingsView: View {
                 .pickerStyle(.menu)
                 .labelsHidden()
             }
+            Toggle("Web search", isOn: $chat.webSearch)
+                .toggleStyle(.switch)
         }
         .textFieldStyle(.roundedBorder)
         .font(.callout)
