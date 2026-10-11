@@ -210,7 +210,7 @@ struct MessageView: View {
 
     private var displayedReasoning: String {
         guard needsFold, !message.isReasoningExpanded else { return message.reasoning }
-        return reasoningLines.prefix(5).joined(separator: "\n") + "\n…"
+        return reasoningLines.prefix(5).joined(separator: "\n")
     }
 
     var body: some View {
@@ -218,21 +218,26 @@ struct MessageView: View {
             if message.role == .user { Spacer(minLength: 48) }
             VStack(alignment: .leading, spacing: 6) {
                 if !message.reasoning.isEmpty {
-                    Text(displayedReasoning)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            guard needsFold else { return }
-                            if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
-                                chat.messages[index].isReasoningExpanded.toggle()
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(displayedReasoning)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                        if needsFold {
+                            Button(message.isReasoningExpanded ? "Less" : "More") {
+                                if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
+                                    chat.messages[index].isReasoningExpanded.toggle()
+                                }
                             }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .buttonStyle(.plain)
                         }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 if !message.text.isEmpty {
                     Text(message.text)
