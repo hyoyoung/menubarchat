@@ -3,6 +3,8 @@ import Foundation
 struct FetchedPage: Equatable {
     let host: String
     let text: String
+    let imageURL: URL?
+    let error: String?
 }
 
 struct Message: Identifiable, Equatable {
@@ -81,12 +83,12 @@ final class ChatModel: ObservableObject {
 
     private func fetchPagesForLastUserMessage() async {
         guard let index = messages.indices.last, messages[index].role == .user else { return }
-        for url in Self.urls(in: messages[index].text).prefix(2) {
-            if Task.isCancelled { return }
-            guard let page = await Self.fetchPage(url) else { continue }
-            guard messages.indices.contains(index), messages[index].role == .user else { return }
-            messages[index].pages.append(page)
-        }
+        guard let url = Self.urls(in: messages[index].text).first else { return }
+        if Task.isCancelled { return }
+        let page = await Self.fetchPage(url)
+        if Task.isCancelled { return }
+        guard messages.indices.contains(index), messages[index].role == .user else { return }
+        messages[index].pages.append(page)
     }
 
     private static func urls(in text: String) -> [URL] {
@@ -97,25 +99,48 @@ final class ChatModel: ObservableObject {
             .filter { $0.scheme == "http" || $0.scheme == "https" }
     }
 
-    private static func fetchPage(_ url: URL) async -> FetchedPage? {
-        guard let host = url.host() else { return nil }
+    private static func fetchPage(_ url: URL) async -> FetchedPage {
+        guard let host = url.host() else {
+            return FetchedPage(host: url.absoluteString, text: "", imageURL: nil, error: "invalid URL")
+        }
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
         request.setValue(
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
             forHTTPHeaderField: "User-Agent"
         )
-        guard
-            let (data, response) = try? await URLSession.shared.data(for: request),
-            let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode)
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+                return FetchedPage(host: host, text: "", imageURL: nil, error: "HTTP \(http.statusCode)")
+            }
+            let html = String(data: data, encoding: .utf8) ?? ""
+            let text = ((try? NSAttributedString(
+                html: data,
+                options: [.documentType: NSAttributedString.DocumentType.html],
+                documentAttributes: nil
+            ))?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else {
+                return FetchedPage(host: host, text: "", imageURL: nil, error: "no content")
+            }
+            return FetchedPage(
+                host: host,
+                text: String(text.prefix(20_000)),
+                imageURL: ogImage(in: html),
+                error: nil
+            )
+        } catch {
+            let reason = (error as? URLError)?.code == .timedOut ? "timeout" : "network error"
+            return FetchedPage(host: host, text: "", imageURL: nil, error: reason)
+        }
+    }
+
+    private static func ogImage(in html: String) -> URL? {
+        guard let tag = html.range(of: "og:image"),
+              let open = html[tag.upperBound...].range(of: "content=\"")?.upperBound,
+              let close = html[open...].range(of: "\"")
         else { return nil }
-        let text = ((try? NSAttributedString(
-            html: data,
-            options: [.documentType: NSAttributedString.DocumentType.html],
-            documentAttributes: nil
-        ))?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return nil }
-        return FetchedPage(host: host, text: String(text.prefix(20_000)))
+        return URL(string: String(html[open..<close.lowerBound]))
     }
 
     private func stream() async {
@@ -138,7 +163,7 @@ final class ChatModel: ObservableObject {
             "thinking": ["budget": thinkingBudget],
             "messages": messages.map { message in
                 var content = message.text
-                for page in message.pages {
+                for page in message.pages where page.error == nil {
                     content += "\n\n[Web page content — \(page.host)]\n\(page.text)"
                 }
                 return ["role": message.role.rawValue, "content": content]

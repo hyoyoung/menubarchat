@@ -217,13 +217,58 @@ struct MessageView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-                if !message.pages.isEmpty {
-                    Label(message.pages.map(\.host).joined(separator: ", "), systemImage: "link")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                ForEach(message.pages, id: \.host) { page in
+                    PagePreview(page: page)
                 }
             }
             if message.role == .assistant { Spacer(minLength: 48) }
+        }
+    }
+}
+
+struct PagePreview: View {
+    let page: FetchedPage
+
+    private var firstLine: String {
+        page.text.split(separator: "\n", omittingEmptySubsequences: true).first.map(String.init) ?? ""
+    }
+
+    var body: some View {
+        Group {
+            if let error = page.error {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else {
+                HStack(spacing: 10) {
+                    AsyncImage(url: page.imageURL) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            Color(nsColor: .quaternaryLabelColor)
+                        }
+                    }
+                    .frame(width: 56, height: 56)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(page.host)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(firstLine)
+                            .font(.callout)
+                            .lineLimit(2)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
         }
     }
 }
