@@ -113,6 +113,8 @@ final class ChatModel: ObservableObject {
 
     private func fetchPagesForLastUserMessage() async {
         guard let index = messages.indices.last, messages[index].role == .user else { return }
+        // URLs embedded in a long paste are part of the pasted content, not a fetch target.
+        guard messages[index].pasteID == 0 else { return }
         guard let url = Self.urls(in: messages[index].text).first else { return }
         if Task.isCancelled { return }
         isFetchingPage = true
