@@ -18,6 +18,8 @@ struct Message: Identifiable, Equatable {
     var completionTokens: Int?
     var pages: [FetchedPage] = []
     var isReasoningExpanded = false
+    var pasteID = 0
+    var isTextExpanded = false
 
     enum Role: String {
         case user, assistant
@@ -40,7 +42,7 @@ final class ChatModel: ObservableObject {
     @Published var isStreaming = false
     @Published var isFetchingPage = false
     @Published var copiedMessageID: UUID?
-    private var nextPageID = 1
+    private var nextAttachmentID = 1
     @Published var showsSettings = false
 
     @Published var apiKey: String { didSet { UserDefaults.standard.set(apiKey, forKey: "apiKey") } }
@@ -70,6 +72,10 @@ final class ChatModel: ObservableObject {
         guard !prompt.isEmpty, !isStreaming else { return }
         draft = ""
         messages.append(Message(role: .user, text: prompt))
+        if let index = messages.indices.last, Self.isLongPaste(prompt) {
+            messages[index].pasteID = nextAttachmentID
+            nextAttachmentID += 1
+        }
         isStreaming = true
         showsSettings = false
 
@@ -115,8 +121,8 @@ final class ChatModel: ObservableObject {
         if Task.isCancelled { return }
         guard messages.indices.contains(index), messages[index].role == .user else { return }
         if page.error == nil {
-            page.id = nextPageID
-            nextPageID += 1
+            page.id = nextAttachmentID
+            nextAttachmentID += 1
         }
         messages[index].pages.append(page)
     }
@@ -217,15 +223,32 @@ final class ChatModel: ObservableObject {
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func mentionedPageIDs() -> Set<Int> {
+    private struct AttachmentRef {
+        let isWeb: Bool
+        let number: Int
+    }
+
+    private func mentionedAttachments() -> [AttachmentRef] {
         guard let text = messages.last?.text,
-              let regex = try? NSRegularExpression(pattern: "ID(\\d+)")
+              let regex = try? NSRegularExpression(pattern: "ID(\\d+)(p?)")
         else { return [] }
         let range = NSRange(text.startIndex..., in: text)
-        return Set(regex.matches(in: text, range: range).compactMap { match in
-            guard let r = Range(match.range(at: 1), in: text) else { return nil }
-            return Int(text[r])
-        })
+        return regex.matches(in: text, range: range).compactMap { match in
+            guard let number = Range(match.range(at: 1), in: text),
+                  let value = Int(text[number])
+            else { return nil }
+            let isPaste = Range(match.range(at: 2), in: text) != nil
+            return AttachmentRef(isWeb: !isPaste, number: value)
+        }
+    }
+
+    private static func isLongPaste(_ text: String) -> Bool {
+        text.split(separator: "\n", omittingEmptySubsequences: false).count > 10
+    }
+
+    private static func firstLine(of text: String) -> String {
+        let line = text.split(separator: "\n", omittingEmptySubsequences: true).first.map(String.init) ?? ""
+        return String(line.prefix(60))
     }
 
     private static func isURLOnly(_ text: String) -> Bool {
@@ -235,27 +258,44 @@ final class ChatModel: ObservableObject {
     }
 
     private func apiContent(for message: Message, isLast: Bool) -> String {
-        var content = message.text
         let pages = message.pages.filter { $0.error == nil }
-        if isLast {
-            if !pages.isEmpty {
-                for page in pages {
-                    content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
-                }
-                let mentioned = mentionedPageIDs()
-                let ownIDs = Set(pages.map(\.id))
-                for page in messages.flatMap(\.pages) where mentioned.contains(page.id) && !ownIDs.contains(page.id) {
-                    content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
-                }
+        guard isLast else {
+            var content = message.text
+            if message.pasteID > 0 {
+                content = "[Text ID\(message.pasteID)p (\(Self.firstLine(of: message.text))) — mention \"ID\(message.pasteID)p\" to re-include]"
             }
-            let instruction = urlHandling.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !instruction.isEmpty, Self.isURLOnly(message.text) {
-                content += "\n\n[Instruction: \(instruction)]"
-            }
-        } else if !pages.isEmpty {
             for page in pages {
                 content += "\n\n[Page ID\(page.id) (\(page.host)) — mention \"ID\(page.id)\" to re-include]"
             }
+            return content
+        }
+        var content = message.text
+        if message.pasteID > 0 {
+            content = "[Pasted text ID\(message.pasteID)p]\n\(message.text)"
+        }
+        for page in pages {
+            content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+        }
+        var includedPages = Set(pages.map(\.id))
+        var includedPastes: Set<Int> = [message.pasteID]
+        for ref in mentionedAttachments() {
+            if ref.isWeb {
+                guard !includedPages.contains(ref.number),
+                      let page = messages.flatMap(\.pages).first(where: { $0.error == nil && $0.id == ref.number })
+                else { continue }
+                includedPages.insert(ref.number)
+                content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+            } else {
+                guard !includedPastes.contains(ref.number),
+                      let source = messages.first(where: { $0.pasteID == ref.number })
+                else { continue }
+                includedPastes.insert(ref.number)
+                content += "\n\n[Pasted text ID\(ref.number)p]\n\(source.text)"
+            }
+        }
+        let instruction = urlHandling.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !instruction.isEmpty, Self.isURLOnly(message.text) {
+            content += "\n\n[Instruction: \(instruction)]"
         }
         return content
     }

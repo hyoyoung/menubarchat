@@ -265,19 +265,52 @@ struct MessageView: View {
                 }
                 if !message.text.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(message.text)
-                            .textSelection(.enabled)
-                        if message.role == .assistant {
-                            HStack {
-                                Spacer(minLength: 0)
-                                Button {
-                                    chat.copyAnswer(message)
-                                } label: {
-                                    Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
-                                        .font(.caption)
+                        if message.role == .user && message.pasteID > 0 {
+                            HStack(spacing: 10) {
+                                Image(systemName: "doc.text")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 40, height: 40)
+                                    .background(Color(nsColor: .quaternaryLabelColor))
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(message.text.split(separator: "\n", omittingEmptySubsequences: true).first.map(String.init) ?? "")
+                                        .font(.callout)
+                                        .lineLimit(1)
+                                    Text("붙여넣은 텍스트 · \(message.text.split(separator: "\n", omittingEmptySubsequences: false).count)줄 · ID\(message.pasteID)p")
+                                        .font(.caption2)
                                         .foregroundStyle(.secondary)
                                 }
-                                .buttonStyle(.plain)
+                                Spacer(minLength: 0)
+                            }
+                            if message.isTextExpanded {
+                                Text(message.text)
+                                    .textSelection(.enabled)
+                            }
+                            Button(message.isTextExpanded ? "Less" : "More") {
+                                if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
+                                    chat.messages[index].isTextExpanded.toggle()
+                                }
+                            }
+                            .font(.caption)
+                            .italic()
+                            .foregroundStyle(.secondary)
+                            .buttonStyle(.plain)
+                        } else {
+                            Text(message.text)
+                                .textSelection(.enabled)
+                            if message.role == .assistant {
+                                HStack {
+                                    Spacer(minLength: 0)
+                                    Button {
+                                        chat.copyAnswer(message)
+                                    } label: {
+                                        Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                         }
                     }
