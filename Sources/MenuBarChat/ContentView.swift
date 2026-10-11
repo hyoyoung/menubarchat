@@ -230,6 +230,7 @@ struct MessageView: View {
                                 }
                             }
                             .font(.caption)
+                            .italic()
                             .foregroundStyle(.secondary)
                             .buttonStyle(.plain)
                         }
