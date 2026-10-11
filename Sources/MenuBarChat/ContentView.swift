@@ -305,9 +305,7 @@ struct MessageView: View {
                             Text(message.text)
                                 .textSelection(.enabled)
                         }
-                        if message.role == .assistant
-                            || chat.hoveredMessageID == message.id
-                            || chat.copiedMessageID == message.id {
+                        if message.role == .assistant {
                             HStack {
                                 Spacer(minLength: 0)
                                 Button {
@@ -329,6 +327,24 @@ struct MessageView: View {
                             : Color(nsColor: .controlBackgroundColor)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(alignment: .bottomTrailing) {
+                        // Overlay keeps the bubble size stable while hovering.
+                        if message.role == .user,
+                           chat.hoveredMessageID == message.id || chat.copiedMessageID == message.id {
+                            Button {
+                                chat.copyAnswer(message)
+                            } label: {
+                                Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(4)
+                                    .background(Color(nsColor: .controlBackgroundColor).opacity(0.9))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .padding(4)
+                        }
+                    }
                     .onHover { hovering in
                         if message.role == .user {
                             chat.hoveredMessageID = hovering ? message.id : nil
