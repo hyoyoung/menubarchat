@@ -19,7 +19,9 @@ MenuBarChat은 Z.AI GLM 모델과 토큰 단위 스트리밍으로 대화하는 
 - 스펙 점검 + 앱 빌드: `./openspec-all-build.sh` (스펙 구조를 확인한 뒤
   make-only-app.sh를 호출)
 - 독립 앱 번들 빌드: `./make-only-app.sh` → `build/MenuBarChat.app`
-  (릴리스 바이너리 + `LSUIElement` 포함 `Info.plist`, 미서명, 로컬 용도)
+  (릴리스 바이너리 + `LSUIElement` 포함 `Info.plist`, 미서명, 로컬 용도).
+  컴파일 경고가 있으면 빌드가 실패한다(CommandLineTools search-path
+  노이즈는 제외)
 
 ## 레이아웃
 

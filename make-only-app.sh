@@ -1,6 +1,13 @@
 #!/bin/sh
 set -e
-swift build -c release
+build_output=$(swift build -c release 2>&1) || { printf '%s\n' "$build_output"; exit 1; }
+printf '%s\n' "$build_output"
+warnings=$(printf '%s\n' "$build_output" | grep 'warning:' | grep -v 'CommandLineTools/Developer' || true)
+if [ -n "$warnings" ]; then
+    echo "빌드 경고 발견 — 수정 후 다시 시도하세요:" >&2
+    printf '%s\n' "$warnings" >&2
+    exit 1
+fi
 mkdir -p build/MenuBarChat.app/Contents/MacOS
 cp .build/release/MenuBarChat build/MenuBarChat.app/Contents/MacOS/MenuBarChat
 cat > build/MenuBarChat.app/Contents/Info.plist <<'EOF'
