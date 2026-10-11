@@ -251,6 +251,21 @@ struct MessageView: View {
                                 : Color(nsColor: .controlBackgroundColor)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(alignment: .topTrailing) {
+                            if message.role == .assistant {
+                                Button {
+                                    chat.copyAnswer(message)
+                                } label: {
+                                    Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .padding(5)
+                                        .background(Color(nsColor: .controlBackgroundColor).opacity(0.9))
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                 }
                 if let prompt = message.promptTokens, let completion = message.completionTokens {
                     Text("↑\(prompt) ↓\(completion)")

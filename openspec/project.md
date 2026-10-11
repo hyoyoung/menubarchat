@@ -37,6 +37,9 @@ MenuBarChat은 Z.AI GLM 모델과 토큰 단위 스트리밍으로 대화하는 
 - 실행 시 어떤 창도 표시되어서는 안 됨. 상태 항목만 존재
 - Z.AI 상시 사고(thinking) 모델(glm-5.x)은 `thinking.type`을 거부 —
   `thinking: {"budget": "low"}`를 사용할 것
+- Command Line Tools만으로 빌드하면 SwiftUI 매크로 플러그인
+  (`SwiftUIMacros`)이 없어 `@State`/`@StateObject` 컴파일 불가 — UI
+  상태는 `ChatModel`의 `@Published`나 `Message` 필드로 관리할 것
 
 ## 환경설정
 

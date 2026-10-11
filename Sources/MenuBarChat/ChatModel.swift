@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 struct FetchedPage: Equatable {
@@ -38,6 +39,7 @@ final class ChatModel: ObservableObject {
     @Published var draft = ""
     @Published var isStreaming = false
     @Published var isFetchingPage = false
+    @Published var copiedMessageID: UUID?
     private var nextPageID = 1
     @Published var showsSettings = false
 
@@ -83,6 +85,16 @@ final class ChatModel: ObservableObject {
     func clear() {
         stop()
         messages.removeAll()
+    }
+
+    func copyAnswer(_ message: Message) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(message.text, forType: .string)
+        copiedMessageID = message.id
+        Task {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            if copiedMessageID == message.id { copiedMessageID = nil }
+        }
     }
 
     private func fetchPagesForLastUserMessage() async {
