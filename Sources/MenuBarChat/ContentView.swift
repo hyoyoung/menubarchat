@@ -132,8 +132,14 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SecureField("API key", text: $chat.apiKey)
-            TextField("Base URL (OpenAI-compatible)", text: $chat.baseURL)
+            HStack {
+                Text("API key")
+                SecureField("Z.AI API key", text: $chat.apiKey)
+            }
+            HStack {
+                Text("Base URL")
+                TextField("https://api.z.ai/api/coding/paas/v4", text: $chat.baseURL)
+            }
             HStack {
                 Text("Model")
                 Spacer()
@@ -158,7 +164,10 @@ struct SettingsView: View {
             }
             Toggle("Web search", isOn: $chat.webSearch)
                 .toggleStyle(.switch)
-            TextField("http/https default handling", text: $chat.urlHandling)
+            HStack {
+                Text("URL handling")
+                TextField("http/https default handling", text: $chat.urlHandling)
+            }
         }
         .textFieldStyle(.roundedBorder)
         .font(.callout)

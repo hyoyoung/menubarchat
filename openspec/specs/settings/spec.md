@@ -7,10 +7,11 @@
 ## Requirements
 
 ### Requirement: 설정 필드
-패널 내 설정 섹션에 비밀 API 키 필드, base URL 필드, 모델 선택(프리셋
+패널 내 설정 섹션에 "API key", "Base URL" 라벨이 붙은 비밀 API 키 필드와
+base URL 필드, 모델 선택(프리셋
 `glm-5.3-flash`/`glm-5.3`/`glm-4.6` + `Custom…` 직접 입력), 사고(thinking)
-수준 선택(`low`/`medium`/`high`/`max`), 웹 검색 토글, "http/https default
-handling" 지시문 필드를 제공한다.
+수준 선택(`low`/`medium`/`high`/`max`), 웹 검색 토글, "URL handling" 라벨이
+붙은 "http/https default handling" 지시문 필드를 제공한다.
 
 #### Scenario: 프리셋 없는 모델 직접 입력
 - **WHEN** 모델 선택에서 "Custom…"을 고르고 모델 이름을 입력하면
