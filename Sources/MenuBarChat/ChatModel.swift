@@ -51,7 +51,7 @@ final class ChatModel: ObservableObject {
         baseURL = defaults.string(forKey: "baseURL") ?? "https://api.z.ai/api/coding/paas/v4"
         model = defaults.string(forKey: "model") ?? "glm-5.3-flash"
         thinkingBudget = defaults.string(forKey: "thinkingBudget") ?? "high"
-        webSearch = (defaults.object(forKey: "webSearch") as? Bool) ?? true
+        webSearch = (defaults.object(forKey: "webSearch") as? Bool) ?? false
     }
 
     func send() {

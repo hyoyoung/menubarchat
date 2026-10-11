@@ -16,11 +16,11 @@ messages: [{role, content}]}` JSON이다. 웹 검색이 켜져 있으면
 
 #### Scenario: 기본 구성
 - **WHEN** 저장된 설정이 없으면
-- **THEN** 요청은 glm-5.3-flash 모델로 Z.AI 코딩 엔드포인트를 대상으로 하며 web_search 도구를 포함한다
+- **THEN** 요청은 glm-5.3-flash 모델로 Z.AI 코딩 엔드포인트를 대상으로 하며 web_search 도구 없이 보낸다
 
-#### Scenario: 웹 검색 끄기
-- **WHEN** 설정에서 웹 검색을 끄면
-- **THEN** 요청은 web_search 도구 없이 보내진다
+#### Scenario: 웹 검색 켜기
+- **WHEN** 설정에서 웹 검색을 켜면
+- **THEN** 요청에 web_search 도구가 포함되고 답변에 출처가 인용된다
 
 ### Requirement: 사고(thinking) 예산
 설정의 사고 수준(`low`/`medium`/`high`/`max`, 기본 `high`)을
