@@ -180,11 +180,11 @@ final class ChatModel: ObservableObject {
     private static func plainText(fromHTML html: String) async -> String {
         let source = String(html.prefix(500_000))
         let importer = Task.detached(priority: .utility) { () -> String in
-            ((try? NSAttributedString(
+            (NSAttributedString(
                 html: Data(source.utf8),
                 options: [.documentType: NSAttributedString.DocumentType.html],
                 documentAttributes: nil
-            ))?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            )?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         }
         let converted: String? = await withTaskGroup(of: String?.self) { group in
             group.addTask { await importer.value }
