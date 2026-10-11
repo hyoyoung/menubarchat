@@ -28,7 +28,7 @@ Click the gear icon in the panel:
   pay-as-you-go API key.
 - **Model** — e.g. `glm-5.3-flash` (default), `glm-5.3`, `glm-4.6` — or a
   custom name via "Custom…"
-- **Thinking level** — `low` (default), `medium`, `high`, `max` — sent as the
+- **Thinking level** — `low`, `medium`, `high` (default), `max` — sent as the
   API's `thinking.budget`. GLM-5.3 models cannot disable thinking.
 
 The Z.AI API is OpenAI-compatible, so other endpoints still work if you change

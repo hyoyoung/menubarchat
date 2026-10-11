@@ -43,7 +43,7 @@ final class ChatModel: ObservableObject {
             ?? env["ZAI_API_KEY"] ?? env["Z_AI_API_KEY"] ?? ""
         baseURL = defaults.string(forKey: "baseURL") ?? "https://api.z.ai/api/coding/paas/v4"
         model = defaults.string(forKey: "model") ?? "glm-5.3-flash"
-        thinkingBudget = defaults.string(forKey: "thinkingBudget") ?? "low"
+        thinkingBudget = defaults.string(forKey: "thinkingBudget") ?? "high"
     }
 
     func send() {

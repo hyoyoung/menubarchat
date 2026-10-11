@@ -19,7 +19,7 @@
 편집 즉시 `apiKey`, `baseURL`, `model`, `thinkingBudget`을 UserDefaults에
 저장하고 실행 시 불러온다. 저장된 값이 없을 때 기본값: base URL
 `https://api.z.ai/api/coding/paas/v4`, 모델 `glm-5.3-flash`, 사고 수준
-`low`, API 키는 환경변수 `ZAI_API_KEY`(그 다음 `Z_AI_API_KEY`)에서 읽는다.
+`high`, API 키는 환경변수 `ZAI_API_KEY`(그 다음 `Z_AI_API_KEY`)에서 읽는다.
 
 #### Scenario: 설정이 재실행 후에도 유지
 - **WHEN** 사용자가 모델을 수정하고 앱을 재시작하면
