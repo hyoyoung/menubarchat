@@ -6,3 +6,5 @@ build/
 
 # macOS
 .DS_Store
+# vim swap
+.*.swp
