@@ -304,19 +304,17 @@ struct MessageView: View {
                         } else {
                             Text(message.text)
                                 .textSelection(.enabled)
-                            if message.role == .assistant {
-                                HStack {
-                                    Spacer(minLength: 0)
-                                    Button {
-                                        chat.copyAnswer(message)
-                                    } label: {
-                                        Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
+                        }
+                        HStack {
+                            Spacer(minLength: 0)
+                            Button {
+                                chat.copyAnswer(message)
+                            } label: {
+                                Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 12)
