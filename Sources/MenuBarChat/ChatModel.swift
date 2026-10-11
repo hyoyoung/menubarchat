@@ -294,8 +294,8 @@ final class ChatModel: ObservableObject {
             }
         }
         let instruction = urlHandling.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !instruction.isEmpty, Self.isURLOnly(message.text) {
-            content += "\n\n[Instruction: \(instruction)]"
+        if !instruction.isEmpty, Self.isURLOnly(message.text) || message.pasteID > 0 {
+            content += "\n\n[Instruction: \(instruction) — unless the user already asked something specific above]"
         }
         return content
     }
