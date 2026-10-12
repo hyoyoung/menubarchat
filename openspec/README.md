@@ -19,6 +19,6 @@ Z.AI GLM 모델용 macOS 메뉴 막대 채팅 클라이언트, MenuBarChat의
 헤더(`## ADDED Requirements`, `## MODIFIED Requirements`,
 `## REMOVED Requirements`)를 사용합니다.
 
-> 참고: `Requirement:`, `Scenario:`, `WHEN`, `THEN` 같은 구조 키워드는
-> 공식 CLI 및 에이전트 파싱 호환성을 위해 영어를 유지하고, 그 외 내용은
-> 한국어로 작성합니다.
+> 참고: `## Purpose`, `Requirement:`, `Scenario:`, `WHEN`, `THEN` 같은 구조
+> 키워드는 공식 CLI 및 에이전트 파싱 호환성을 위해 영어를 유지하고, 그
+> 외 내용은 한국어로 작성합니다.
