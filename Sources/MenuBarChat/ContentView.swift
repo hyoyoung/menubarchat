@@ -84,12 +84,72 @@ struct ContentView: View {
 
             Divider()
 
+            if let queued = chat.queuedMessage {
+                VStack(spacing: 6) {
+                    HStack {
+                        Text("대기 메시지 1개")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("모두 지우기") { chat.clearQueued() }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .buttonStyle(.plain)
+                            .keyboardShortcut(.delete, modifiers: [.option, .command])
+                    }
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color.accentColor)
+                            .frame(width: 6, height: 6)
+                        Text(queued)
+                            .font(.system(.callout, design: .monospaced))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                        Spacer(minLength: 8)
+                        Button {
+                            chat.clearQueued()
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .buttonStyle(.plain)
+                        .help("대기 메시지 삭제")
+                        Button {
+                            chat.unqueueToDraft()
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .buttonStyle(.plain)
+                        .help("초안으로 되돌리기")
+                        Button("지금 보내기 ↵") {
+                            chat.stop()
+                        }
+                        .font(.caption)
+                        .buttonStyle(.borderless)
+                        .disabled(!chat.isStreaming)
+                    }
+                    Divider()
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+            }
+
             HStack(alignment: .bottom, spacing: 8) {
                 TextField("Message", text: $chat.draft, axis: .vertical)
                     .textFieldStyle(.plain)
                     .lineLimit(1...5)
                     .focused($focused)
-                    .onSubmit { chat.send() }
+                    .onSubmit {
+                        if chat.queuedMessage != nil,
+                           chat.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            chat.stop()
+                        } else {
+                            chat.send()
+                        }
+                    }
 
                 Button {
                     if chat.isStreaming {

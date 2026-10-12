@@ -28,6 +28,7 @@ final class ChatModel: ObservableObject {
     @Published var hoveredMessageID: UUID?
     private var nextAttachmentID = 1
     @Published var showsSettings = false
+    @Published var queuedMessage: String?
 
     let settings = SettingsStore()
 
@@ -35,12 +36,49 @@ final class ChatModel: ObservableObject {
 
     func send() {
         let prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !prompt.isEmpty, !isStreaming else { return }
-        guard !settings.apiKey.trimmingCharacters(in: .whitespaces).isEmpty else {
-            messages.append(Message(role: .assistant, text: "Error: API key is empty — open settings"))
+        guard !prompt.isEmpty else { return }
+        if isStreaming {
+            if queuedMessage == nil {
+                queuedMessage = prompt
+                draft = ""
+            }
+            return
+        }
+        guard hasAPIKey else {
+            showEmptyKeyHint()
             return
         }
         draft = ""
+        sendNow(prompt)
+    }
+
+    private var hasAPIKey: Bool {
+        !settings.apiKey.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private func showEmptyKeyHint() {
+        messages.append(Message(role: .assistant, text: "Error: API key is empty — open settings"))
+    }
+
+    func clearQueued() {
+        queuedMessage = nil
+    }
+
+    func unqueueToDraft() {
+        guard let queued = queuedMessage else { return }
+        queuedMessage = nil
+        if draft.isEmpty {
+            draft = queued
+        } else {
+            draft += "\n" + queued
+        }
+    }
+
+    private func sendNow(_ prompt: String) {
+        guard hasAPIKey else {
+            showEmptyKeyHint()
+            return
+        }
         messages.append(Message(role: .user, text: prompt))
         if let index = messages.indices.last, PromptComposer.isLongPaste(prompt) {
             messages[index].pasteID = nextAttachmentID
@@ -54,6 +92,10 @@ final class ChatModel: ObservableObject {
             await stream()
             isStreaming = false
             streamTask = nil
+            if let queued = queuedMessage {
+                queuedMessage = nil
+                sendNow(queued)
+            }
         }
     }
 
