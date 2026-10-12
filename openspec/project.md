@@ -31,11 +31,21 @@ MenuBarChat은 Z.AI GLM 모델과 토큰 단위 스트리밍으로 대화하는 
 
 ## 레이아웃
 
-- `Sources/MenuBarChat/main.swift` — AppKit 진입점 (SwiftUI 씬 없음)
+- `Sources/MenuBarChat/main.swift` — AppKit 진입점 (SwiftUI 씬 없음,
+  `--selftest` 분기)
 - `Sources/MenuBarChat/MenuBarChatApp.swift` — 상태 항목, 채팅 패널,
   우클릭 정보/종료 메뉴
-- `Sources/MenuBarChat/ChatModel.swift` — 대화 상태, SSE 스트리밍,
-  설정 영속화
+- `Sources/MenuBarChat/ChatModel.swift` — 대화 상태, 오케스트레이션
+  (send/stop/clear/copy)
+- `Sources/MenuBarChat/LLMClient.swift` — chat completions 요청 + SSE
+  스트리밍 + 델타 파싱 (llm-provider 스펙)
+- `Sources/MenuBarChat/SettingsStore.swift` — 설정 6종 + UserDefaults
+  (settings 스펙)
+- `Sources/MenuBarChat/PageFetcher.swift` — 웹 페이지/YouTube 자막 fetch,
+  HTML→텍스트 변환
+- `Sources/MenuBarChat/PromptComposer.swift` — 첨부 ID 스텁·재포함·지시문
+  프롬프트 조립 (순수 함수)
+- `Sources/MenuBarChat/SelfTest.swift` — 앱 내장 유닛테스트 하네스
 - `Sources/MenuBarChat/ContentView.swift` — 채팅 UI, 설정 UI, 말풍선
 
 ## 알려진 플랫폼 함정 (재발 방지)
