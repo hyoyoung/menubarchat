@@ -113,18 +113,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showPanelBelowIcon(_ panel: NSPanel) {
+        // Activate before ordering front: when the app is inactive (another
+        // app focused) the panel's front placement can otherwise be ignored.
+        NSApp.activate(ignoringOtherApps: true)
         if let iconFrame = statusItem.button?.window?.frame {
             let width = panel.frame.width
-            let visible = NSScreen.screens.first?.visibleFrame ?? .zero
+            let screen = NSScreen.screens.first { iconFrame.midX >= $0.frame.minX && iconFrame.midX <= $0.frame.maxX }
+                ?? NSScreen.main
+            let visible = screen?.visibleFrame ?? .zero
             let x = min(max(iconFrame.midX - width / 2, visible.minX), visible.maxX - width)
             panel.setFrameOrigin(NSPoint(x: x, y: iconFrame.minY - panel.frame.height - 8))
         }
         panel.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func togglePanel() {
-        if panel.isVisible {
+        // Hide only when truly visible; a visible-flagged but occluded panel
+        // is re-shown below the icon instead of consuming the click to hide.
+        if panel.isVisible && panel.occlusionState.contains(.visible) {
             panel.orderOut(nil)
             chat.showsSettings = false
             return
