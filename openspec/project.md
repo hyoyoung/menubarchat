@@ -61,5 +61,6 @@ MenuBarChat은 Z.AI GLM 모델과 토큰 단위 스트리밍으로 대화하는 
 
 ## 환경설정
 
-- UserDefaults 키: `apiKey`, `baseURL`, `model`
+- UserDefaults 키: `apiKey`, `baseURL`, `model`, `thinkingBudget`,
+  `webSearch`, `urlHandling`
 - 저장된 값이 없을 때 API 키 환경변수 대체: `ZAI_API_KEY`, 그 다음 `Z_AI_API_KEY`
