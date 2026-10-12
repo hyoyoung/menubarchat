@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: ChatPanel!
     private var aboutPanel: ChatPanel!
     private let menu = NSMenu()
+    private var pasteMonitor: Any?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -54,6 +55,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aboutPanel.level = .floating
         aboutPanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         aboutPanel.setFrame(NSRect(x: 0, y: 0, width: 300, height: 340), display: false)
+
+        pasteMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            self?.interceptPaste(event) ?? event
+        }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        if let pasteMonitor { NSEvent.removeMonitor(pasteMonitor) }
+    }
+
+    // SwiftUI (macOS) offers no paste interception on TextField, so ⌘V is
+    // classified before insertion: non-text paste is rejected with a notice,
+    // long text is staged as an attachment instead of entering the field.
+    private func interceptPaste(_ event: NSEvent) -> NSEvent? {
+        guard event.window === panel,
+              !chat.showsSettings,
+              event.modifierFlags.contains(.command),
+              (event.charactersIgnoringModifiers ?? "").lowercased() == "v"
+        else { return event }
+        guard let text = NSPasteboard.general.string(forType: .string) else {
+            chat.showPasteNotice()
+            return nil
+        }
+        if PromptComposer.isLongPaste(text) {
+            chat.stagePaste(text)
+            return nil
+        }
+        return event
     }
 
     // Without a main menu, Edit key equivalents (Cmd+C/V/X/A/Z) never reach the text field.

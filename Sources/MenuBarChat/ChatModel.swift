@@ -29,13 +29,19 @@ final class ChatModel: ObservableObject {
     private var nextAttachmentID = 1
     @Published var showsSettings = false
     @Published var queuedMessage: String?
+    @Published var stagedPaste: String?
+    @Published var pasteNotice: String?
 
     let settings = SettingsStore()
 
     private var streamTask: Task<Void, Never>?
 
     func send() {
-        let prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        var prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let staged = stagedPaste {
+            stagedPaste = nil
+            prompt = prompt.isEmpty ? staged : prompt + "\n" + staged
+        }
         guard !prompt.isEmpty else { return }
         if isStreaming {
             if queuedMessage == nil {
@@ -62,6 +68,32 @@ final class ChatModel: ObservableObject {
 
     func clearQueued() {
         queuedMessage = nil
+    }
+
+    func stagePaste(_ text: String) {
+        stagedPaste = text
+    }
+
+    func clearStaged() {
+        stagedPaste = nil
+    }
+
+    func unstageToDraft() {
+        guard let staged = stagedPaste else { return }
+        stagedPaste = nil
+        if draft.isEmpty {
+            draft = staged
+        } else {
+            draft += "\n" + staged
+        }
+    }
+
+    func showPasteNotice() {
+        pasteNotice = "붙여넣을 수 있는 것은 텍스트뿐입니다 — 이미지·파일은 지원하지 않습니다"
+        Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            pasteNotice = nil
+        }
     }
 
     func unqueueToDraft() {

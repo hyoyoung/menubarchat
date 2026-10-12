@@ -84,6 +84,48 @@ struct ContentView: View {
 
             Divider()
 
+            if let notice = chat.pasteNotice {
+                Text(notice)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 6)
+            }
+
+            if let staged = chat.stagedPaste {
+                HStack(spacing: 8) {
+                    Image(systemName: "doc.text")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\((staged.split(separator: "\n", omittingEmptySubsequences: true).first ?? "").prefix(60)) · \(staged.split(separator: "\n", omittingEmptySubsequences: false).count)줄 · 전송 시 첨부")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    Button {
+                        chat.clearStaged()
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .buttonStyle(.plain)
+                    .help("붙여넣기 항목 삭제")
+                    Button {
+                        chat.unstageToDraft()
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .buttonStyle(.plain)
+                    .help("초안으로 되돌리기")
+                }
+                .padding(.horizontal, 14)
+                .padding(.top, 8)
+            }
+
             if let queued = chat.queuedMessage {
                 VStack(spacing: 6) {
                     HStack {
