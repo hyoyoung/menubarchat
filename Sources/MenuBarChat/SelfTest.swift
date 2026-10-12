@@ -17,6 +17,10 @@ enum SelfTest {
         instructionAttachedToLongPaste()
         instructionSkippedForPlainMessage()
         emptyInstructionNeverAttached()
+        youtubeVideoIDExtraction()
+        captionTrackSelection()
+        transcriptAssembly()
+        metaTagExtraction()
         print(failures == 0 ? "selftest: all passed" : "selftest: \(failures) failure(s)")
         return failures == 0
     }
@@ -116,5 +120,43 @@ enum SelfTest {
         let last = Message(role: .user, text: "https://example.com")
         let content = content(last, messages: [last], isLast: true, urlHandling: "   ")
         check(!content.contains("[Instruction:"), "empty instruction -> none")
+    }
+
+    private static func youtubeVideoIDExtraction() {
+        let watch = URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ")!
+        let short = URL(string: "https://youtu.be/dQw4w9WgXcQ")!
+        let foreign = URL(string: "https://example.com/watch?v=abc")!
+        let search = URL(string: "https://youtube.com/results?search_query=x")!
+        check(PageFetcher.youtubeVideoID(of: watch) == "dQw4w9WgXcQ", "watch URL id")
+        check(PageFetcher.youtubeVideoID(of: short) == "dQw4w9WgXcQ", "youtu.be id")
+        check(PageFetcher.youtubeVideoID(of: foreign) == nil, "non-youtube nil")
+        check(PageFetcher.youtubeVideoID(of: search) == nil, "no v param nil")
+    }
+
+    private static func captionTrackSelection() {
+        let html = #"x "captionTracks":[{"baseUrl":"https://t/ko","languageCode":"ko","kind":"asr"},{"baseUrl":"https://t/en","languageCode":"en"}] y"#
+        let tracks = PageFetcher.captionTracks(inHTML: html)
+        check(tracks.count == 2, "tracks parsed")
+        check(tracks[0].isAuto && tracks[0].languageCode == "ko", "auto flag parsed")
+        check(PageFetcher.selectCaptionTrack(tracks, preferredLanguage: "ko")?.baseURL == "https://t/en", "manual over auto")
+        check(PageFetcher.selectCaptionTrack(tracks, preferredLanguage: "en")?.baseURL == "https://t/en", "preferred en manual")
+        let manualKO = [
+            PageFetcher.CaptionTrack(baseURL: "https://t/kom", languageCode: "ko", isAuto: false),
+            PageFetcher.CaptionTrack(baseURL: "https://t/en", languageCode: "en", isAuto: false),
+        ]
+        check(PageFetcher.selectCaptionTrack(manualKO, preferredLanguage: "ko")?.baseURL == "https://t/kom", "preferred ko manual")
+        check(PageFetcher.selectCaptionTrack([], preferredLanguage: "ko") == nil, "no tracks nil")
+    }
+
+    private static func transcriptAssembly() {
+        let json = #"{"events":[{"segs":[{"utf8":"hello "},{"utf8":"world"}]},{"segs":[{"utf8":"\n"}]},{"segs":[{"utf8":"second line"}]}]}"#
+        check(PageFetcher.transcript(fromJSON3: Data(json.utf8)) == "hello world\nsecond line", "json3 assembly")
+    }
+
+    private static func metaTagExtraction() {
+        let html = #"<meta property="og:title" content="My Video"><meta property="og:description" content="A great video">"#
+        check(PageFetcher.metaContent("og:title", in: html) == "My Video", "og:title")
+        check(PageFetcher.metaContent("og:description", in: html) == "A great video", "og:description")
+        check(PageFetcher.metaContent("og:image", in: html) == nil, "missing tag nil")
     }
 }
