@@ -288,7 +288,7 @@ struct MessageView: View {
                                     Text(message.text.split(separator: "\n", omittingEmptySubsequences: true).first.map(String.init) ?? "")
                                         .font(.callout)
                                         .lineLimit(1)
-                                    Text("붙여넣은 텍스트 · \(message.text.split(separator: "\n", omittingEmptySubsequences: false).count)줄 · ID\(message.pasteID)p")
+                                    Text("붙여넣은 텍스트 · \(message.text.split(separator: "\n", omittingEmptySubsequences: false).count)줄")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                 }
@@ -298,7 +298,7 @@ struct MessageView: View {
                                 Text(message.text)
                                     .textSelection(.enabled)
                             }
-                            Button(message.isTextExpanded ? "Less" : "More") {
+                            Button("\(message.isTextExpanded ? "Less" : "More"), ID\(message.pasteID)p") {
                                 if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
                                     chat.messages[index].isTextExpanded.toggle()
                                 }
