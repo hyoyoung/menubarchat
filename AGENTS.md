@@ -1,24 +1,16 @@
 # AGENTS.md
 
-이 프로젝트는 스펙 기반 개발을 위해 OpenSpec을 사용합니다.
+OpenSpec 스펙 기반 개발 저장소.
 
-코드를 변경하기 전에:
-
-1. 규칙과 알려진 플랫폼 함정은 `openspec/project.md`를 먼저 읽는다.
-2. 건드릴 코드와 관련된 `openspec/specs/<capability>/spec.md`를 읽는다.
-3. 자잘한 수정을 제외한 모든 작업은 먼저 변경 제안을 만든다:
-   `openspec/changes/<kebab-case-id>/`에 `proposal.md` (이유/내용),
-   `specs/<capability>/spec.md` 델타 (ADDED / MODIFIED / REMOVED 요구사항과
-   WHEN/THEN 시나리오), `tasks.md` (구현 체크리스트). 구현 전에 사용자
-   승인을 받는다.
-4. 구현 후 `swift build`로 검증하고, 스펙이 새로운 진실을 기술하도록
-   갱신한 뒤 변경 폴더를 `openspec/changes/archive/<date>-<id>/`로 옮긴다.
-
-시나리오 형식:
-
-    #### Scenario: <이름>
-    - **WHEN** <조건>
-    - **THEN** <기대 결과>
+1. 작업 전 `openspec/project.md`(규칙·플랫폼 함정)과 관련
+   `openspec/specs/<capability>/spec.md`를 먼저 읽는다.
+2. 자잘한 수정 외 모든 작업은 변경 제안으로 시작한다:
+   `openspec new change <id>` 후 CLI 안내대로 아티팩트를 쓰고,
+   구현 전 사용자 승인을 받는다.
+3. 구현 후 `swift build`(통합은 `./openspec-all-build.sh`)으로 검증하고
+   `openspec archive`로 마감한다.
+4. `/opsx:*` 명령(explore/propose/apply/archive)이 있으면 위 절차를
+   자동화한다.
 
 ## 코딩 원칙
 
