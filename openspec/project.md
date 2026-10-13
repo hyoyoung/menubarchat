@@ -14,7 +14,7 @@ MenuBarChat은 Z.AI GLM 모델과 토큰 단위 스트리밍으로 대화하는 
 
 ## 기술 스택 및 제약
 
-- Swift 5.9 / SwiftUI + AppKit (`NSStatusItem`, `NSPanel`, `NSHostingController`)
+- Swift 5 언어 모드(도구체인 Swift 6.x) / SwiftUI + AppKit (`NSStatusItem`, `NSPanel`, `NSHostingController`)
 - macOS 14 이상, Command Line Tools만으로 빌드 — Xcode 프로젝트 없음, 스토리보드 없음
 - Swift Package Manager 실행 타깃
 - 서드파티 의존성 없음
@@ -22,6 +22,7 @@ MenuBarChat은 Z.AI GLM 모델과 토큰 단위 스트리밍으로 대화하는 
 ## 명령어
 
 - 소스에서 바로 실행: `swift run`
+- 유닛테스트(앱 내장 하네스): `swift run MenuBarChat --selftest`
 - 디버그 빌드: `swift build`
 - 스펙 점검 + 앱 빌드: `./openspec-all-build.sh` (스펙 구조를 확인한 뒤
   make-only-app.sh를 호출)
