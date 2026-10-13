@@ -314,10 +314,18 @@ struct MessageView: View {
     let message: Message
     @EnvironmentObject private var chat: ChatModel
 
-    private static func markdown(_ text: String) -> AttributedString {
+    static func markdown(_ text: String) -> AttributedString {
         var options = AttributedString.MarkdownParsingOptions()
         options.interpretedSyntax = .inlineOnlyPreservingWhitespace
-        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
+        var attr = (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
+        // The spec promises no strikethrough, and GFM ~~ pairs can span
+        // newlines and strike unrelated lines, so the intent is dropped.
+        for run in attr.runs {
+            if let intent = run.inlinePresentationIntent, intent.contains(.strikethrough) {
+                attr[run.range].inlinePresentationIntent = intent.subtracting(.strikethrough)
+            }
+        }
+        return attr
     }
 
     private var reasoningLines: [String] {

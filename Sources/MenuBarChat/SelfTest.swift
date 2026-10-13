@@ -21,6 +21,8 @@ enum SelfTest {
         captionTrackSelection()
         transcriptAssembly()
         metaTagExtraction()
+        strikethroughStripped()
+        boldSurvivesStrikeStrip()
         print(failures == 0 ? "selftest: all passed" : "selftest: \(failures) failure(s)")
         return failures == 0
     }
@@ -158,5 +160,19 @@ enum SelfTest {
         check(PageFetcher.metaContent("og:title", in: html) == "My Video", "og:title")
         check(PageFetcher.metaContent("og:description", in: html) == "A great video", "og:description")
         check(PageFetcher.metaContent("og:image", in: html) == nil, "missing tag nil")
+    }
+
+    private static func strikethroughStripped() {
+        let attr = MessageView.markdown("a ~~b\nc~~ d")
+        let struck = attr.runs.contains { $0.inlinePresentationIntent?.contains(.strikethrough) == true }
+        check(!struck, "multiline ~~ pair -> no strike")
+        check(String(attr.characters) == "a b\nc d", "strike delimiters consumed")
+    }
+
+    private static func boldSurvivesStrikeStrip() {
+        let attr = MessageView.markdown("**굵게** ~~x~~")
+        let bold = attr.runs.contains { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
+        let struck = attr.runs.contains { $0.inlinePresentationIntent?.contains(.strikethrough) == true }
+        check(bold && !struck, "bold preserved, strike stripped")
     }
 }
