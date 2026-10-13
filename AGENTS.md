@@ -7,4 +7,4 @@
   - SOLID
   - DRY
   - KISS
-  - Conciseness
+  - Concise, not terse
