@@ -13,7 +13,7 @@
 
 ## 3. 검증
 
-- [ ] 3.1 `./openspec-all-build.sh` 회귀 없음 + 푸시 후 GitHub에서
+- [x] 3.1 `./openspec-all-build.sh` 회귀 없음 + 푸시 후 GitHub에서
   이미지 표시 확인
 
 ## Workflow follow-up
