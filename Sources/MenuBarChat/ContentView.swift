@@ -72,6 +72,19 @@ struct ContentView: View {
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
                                     }
                                 }
+                                if chat.isStreaming,
+                                   !chat.isFetchingPage,
+                                   chat.messages.last?.role != .assistant {
+                                    HStack {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 8)
+                                            .background(Color(nsColor: .controlBackgroundColor))
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        Spacer(minLength: 48)
+                                    }
+                                }
                             }
                             .padding(14)
                             // Bottom marker: re-enables following once the
