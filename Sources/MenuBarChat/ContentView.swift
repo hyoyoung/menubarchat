@@ -56,34 +56,25 @@ struct ContentView: View {
                                 ForEach(chat.messages) { message in
                                     MessageView(message: message)
                                         .id(message.id)
-                                    if message.role == .user,
-                                       chat.messages.last?.id == message.id,
-                                       chat.isFetchingPage {
-                                        HStack(spacing: 6) {
-                                            ProgressView()
-                                                .controlSize(.small)
+                                }
+                                if chat.isStreaming,
+                                   chat.messages.last?.role != .assistant
+                                   || (chat.messages.last?.text ?? "").isEmpty {
+                                    HStack(spacing: 8) {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                        if chat.isFetchingPage {
                                             Text("페이지 가져오는 중…")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
-                                        .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        Spacer(minLength: 0)
                                     }
-                                }
-                                if chat.isStreaming,
-                                   !chat.isFetchingPage,
-                                   chat.messages.last?.role != .assistant {
-                                    HStack {
-                                        ProgressView()
-                                            .controlSize(.small)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 8)
-                                            .background(Color(nsColor: .controlBackgroundColor))
-                                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                                        Spacer(minLength: 48)
-                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color(nsColor: .controlBackgroundColor))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .padding(.trailing, 48)
                                 }
                             }
                             .padding(14)
