@@ -12,7 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: ChatPanel!
     private var aboutPanel: ChatPanel!
     private let menu = NSMenu()
-    private var pasteMonitor: Any?
+    private var localEventMonitor: Any?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -56,13 +56,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aboutPanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         aboutPanel.setFrame(NSRect(x: 0, y: 0, width: 300, height: 340), display: false)
 
-        pasteMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            self?.interceptPaste(event) ?? event
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .scrollWheel]) { [weak self] event in
+            guard let self else { return event }
+            if event.type == .scrollWheel {
+                interceptScroll(event)
+                return event
+            }
+            return interceptPaste(event) ?? event
         }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        if let pasteMonitor { NSEvent.removeMonitor(pasteMonitor) }
+        if let localEventMonitor { NSEvent.removeMonitor(localEventMonitor) }
+    }
+
+    // Programmatic auto-scroll never produces scroll-wheel events, so an
+    // upward wheel gesture is the only thing that breaks bottom-following.
+    private func interceptScroll(_ event: NSEvent) {
+        guard event.window === panel else { return }
+        let scrollingUp = (event.scrollingDeltaY > 0) != event.isDirectionInvertedFromDevice
+        if scrollingUp {
+            chat.followsBottom = false
+        }
     }
 
     // SwiftUI (macOS) offers no paste interception on TextField, so ⌘V is

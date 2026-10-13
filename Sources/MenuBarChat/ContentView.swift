@@ -39,45 +39,80 @@ struct ContentView: View {
             Divider()
 
             ScrollViewReader { proxy in
-                ScrollView {
-                    if chat.messages.isEmpty {
-                        VStack(spacing: 8) {
-                            Image(systemName: "ellipsis.bubble")
-                                .font(.largeTitle)
-                                .foregroundStyle(.secondary)
-                            Text("Ask anything")
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 160)
-                    } else {
-                        LazyVStack(alignment: .leading, spacing: 8) {
-                            ForEach(chat.messages) { message in
-                                MessageView(message: message)
-                                    .id(message.id)
-                                if message.role == .user,
-                                   chat.messages.last?.id == message.id,
-                                   chat.isFetchingPage {
-                                    HStack(spacing: 6) {
-                                        ProgressView()
-                                            .controlSize(.small)
-                                        Text("페이지 가져오는 중…")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                GeometryReader { scrollGeometry in
+                    ScrollView {
+                        if chat.messages.isEmpty {
+                            VStack(spacing: 8) {
+                                Image(systemName: "ellipsis.bubble")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.secondary)
+                                Text("Ask anything")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 160)
+                        } else {
+                            LazyVStack(alignment: .leading, spacing: 8) {
+                                ForEach(chat.messages) { message in
+                                    MessageView(message: message)
+                                        .id(message.id)
+                                    if message.role == .user,
+                                       chat.messages.last?.id == message.id,
+                                       chat.isFetchingPage {
+                                        HStack(spacing: 6) {
+                                            ProgressView()
+                                                .controlSize(.small)
+                                            Text("페이지 가져오는 중…")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
                                     }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                                 }
                             }
+                            .padding(14)
+                            // Bottom marker: re-enables following once the
+                            // viewport actually reaches the content bottom.
+                            Color.clear
+                                .frame(height: 0)
+                                .background(
+                                    GeometryReader { marker in
+                                        Color.clear
+                                            .onChange(of: marker.frame(in: .global).minY) { _, markerY in
+                                                if markerY <= scrollGeometry.frame(in: .global).maxY + 40 {
+                                                    chat.followsBottom = true
+                                                }
+                                            }
+                                    }
+                                )
                         }
-                        .padding(14)
                     }
-                }
-                .onChange(of: chat.messages) { _, _ in
-                    if let last = chat.messages.last {
-                        proxy.scrollTo(last.id, anchor: .bottom)
+                    .onChange(of: chat.messages) { _, _ in
+                        if chat.followsBottom, let last = chat.messages.last {
+                            proxy.scrollTo(last.id, anchor: .bottom)
+                        }
+                    }
+                    .overlay(alignment: .bottom) {
+                        if !chat.followsBottom && !chat.messages.isEmpty {
+                            Button {
+                                if let last = chat.messages.last {
+                                    proxy.scrollTo(last.id, anchor: .bottom)
+                                }
+                                chat.followsBottom = true
+                            } label: {
+                                Image(systemName: "arrow.down")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .padding(6)
+                                    .background(.thinMaterial, in: Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.bottom, 8)
+                            .help("맨 아래로 이동")
+                        }
                     }
                 }
             }

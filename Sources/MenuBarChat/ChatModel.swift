@@ -31,6 +31,7 @@ final class ChatModel: ObservableObject {
     @Published var queuedMessage: String?
     @Published var stagedPaste: String?
     @Published var pasteNotice: String?
+    @Published var followsBottom = true
 
     let settings = SettingsStore()
 
@@ -111,6 +112,7 @@ final class ChatModel: ObservableObject {
             showEmptyKeyHint()
             return
         }
+        followsBottom = true
         messages.append(Message(role: .user, text: prompt))
         if let index = messages.indices.last, PromptComposer.isLongPaste(prompt) {
             messages[index].pasteID = nextAttachmentID
