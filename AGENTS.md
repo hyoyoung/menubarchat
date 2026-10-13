@@ -1,9 +1,10 @@
 # AGENTS.md
 
-- 작업 전 `openspec/project.md`를 읽는다 (규칙·플랫폼 함정·작업 절차).
-- 원칙
+- Read `openspec/project.md` before working (rules, platform pitfalls,
+  workflow).
+- Principles
   - YAGNI
   - SOLID
   - DRY
   - KISS
-  - 가독성과 기능을 해치지 않는 간결한 변경
+  - Concise changes that never hurt readability or function
