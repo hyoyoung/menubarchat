@@ -7,4 +7,4 @@
   - SOLID
   - DRY
   - KISS
-  - Concise changes that never hurt readability or function
+  - Conciseness
