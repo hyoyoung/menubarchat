@@ -9,8 +9,14 @@ and the Command Line Tools.
 - Token-by-token streaming with collapsible reasoning bubbles and token usage
   per reply; assistant replies render inline markdown (bold, italic, code
   spans, links)
+
+  ![Quick conversation from the menu bar](docs/illustrations/chat.svg)
+
 - URL and paste attachments: pasted pages are fetched and attached as `ID<n>`
   (mention it later to re-include); long pastes fold into an `ID<n>p` card
+
+  ![Paste a URL, get a summary](docs/illustrations/url-summary.svg)
+
 - YouTube URLs are summarized from captions when available, with a metadata
   fallback (marked "Video metadata (no captions)") otherwise
 - Sending with an empty API key is blocked with an inline hint instead of a

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" font-family="-apple-system, 'Helvetica Neue', 'Apple SD Gothic Neo', Arial, sans-serif">
+  <rect width="800" height="520" fill="#FFF9F2" rx="24"/>
+
+  <!-- user message: URL bubble -->
+  <g transform="rotate(1.2 480 104)">
+    <rect x="300" y="66" width="424" height="72" rx="22" fill="#A8C7E8" stroke="#3D4852" stroke-width="3.5"/>
+    <path d="M668 136 L702 164 L698 136 Z" fill="#A8C7E8"/>
+    <path d="M668 136 L702 164 L698 136" fill="none" stroke="#3D4852" stroke-width="3.5" stroke-linejoin="round"/>
+    <g transform="translate(330 88)">
+      <circle cx="16" cy="14" r="15" fill="#FFFFFF" stroke="#3D4852" stroke-width="3"/>
+      <ellipse cx="16" cy="14" rx="7" ry="15" fill="none" stroke="#3D4852" stroke-width="2.5"/>
+      <path d="M2 14 h28 M5 6 h22 M5 22 h22" stroke="#3D4852" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    </g>
+    <text x="528" y="110" text-anchor="middle" font-size="21" fill="#20303F">https://github.com</text>
+  </g>
+
+  <!-- dashed arrow down to the fetched page -->
+  <path d="M470 148 C 452 186, 486 214, 468 250" fill="none" stroke="#3D4852" stroke-width="4"
+        stroke-dasharray="1 12" stroke-linecap="round"/>
+  <path d="M456 240 l12 16 -22 2" fill="none" stroke="#3D4852" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M520 176 l3.5 9.5 9.5 3.5 -9.5 3.5 -3.5 9.5 -3.5 -9.5 -9.5 -3.5 9.5 -3.5 z" fill="#F0A860" stroke="#3D4852" stroke-width="2"/>
+
+  <!-- fetched page card (left, tilted) -->
+  <g transform="rotate(-3 190 300)">
+    <path d="M136 246 h70 l26 26 v128 a9 9 0 0 1 -9 9 h-87 a9 9 0 0 1 -9 -9 v-135 a9 9 0 0 1 9 -9 z"
+          fill="#FFFFFF" stroke="#3D4852" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M206 246 v26 h26" fill="none" stroke="#3D4852" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="152" y="288" width="52" height="9" rx="4.5" fill="#F0A860"/>
+    <rect x="152" y="310" width="64" height="7" rx="3.5" fill="#D9E2EC"/>
+    <rect x="152" y="326" width="56" height="7" rx="3.5" fill="#D9E2EC"/>
+    <rect x="152" y="342" width="60" height="7" rx="3.5" fill="#D9E2EC"/>
+    <rect x="152" y="358" width="42" height="7" rx="3.5" fill="#D9E2EC"/>
+  </g>
+
+  <!-- dashed arrow from page to summary bubble -->
+  <path d="M262 352 C 300 396, 300 420, 328 440" fill="none" stroke="#3D4852" stroke-width="4"
+        stroke-dasharray="1 12" stroke-linecap="round"/>
+  <path d="M316 434 l14 14 -23 1" fill="none" stroke="#3D4852" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M300 320 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" fill="#F4C2C2" stroke="#3D4852" stroke-width="2"/>
+
+  <!-- assistant summary bubble -->
+  <g transform="rotate(-1 320 432)">
+    <rect x="96" y="384" width="448" height="92" rx="22" fill="#B5D9B5" stroke="#3D4852" stroke-width="3.5"/>
+    <path d="M126 474 L94 500 L152 474 Z" fill="#B5D9B5"/>
+    <path d="M126 474 L94 500 L152 474" fill="none" stroke="#3D4852" stroke-width="3.5" stroke-linejoin="round"/>
+    <text x="130" y="420" font-size="20" fill="#20303F">핵심 요약!</text>
+    <path d="M110 428 l8 9 16 -19" fill="none" stroke="#3D4852" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="132" y="448" font-size="17" fill="#20303F">소스 코드를 공유하고</text>
+    <text x="132" y="470" font-size="17" fill="#20303F">함께 개발하는 웹사이트</text>
+
+    <!-- cute octopus -->
+    <g transform="translate(494 424)">
+      <path d="M-21 -6 C -21 -25, 21 -25, 21 -6 C 21 8, 12 15, 0 15 C -12 15, -21 8, -21 -6 Z"
+            fill="#C9A7E8" stroke="#3D4852" stroke-width="3"/>
+      <path d="M-13 12 C -16 19, -9 22, -12 29" fill="none" stroke="#3D4852" stroke-width="3" stroke-linecap="round"/>
+      <path d="M-4 14 C -5 21, -1 24, -3 31" fill="none" stroke="#3D4852" stroke-width="3" stroke-linecap="round"/>
+      <path d="M4 14 C 5 21, 9 23, 7 30" fill="none" stroke="#3D4852" stroke-width="3" stroke-linecap="round"/>
+      <path d="M13 12 C 16 19, 9 21, 12 28" fill="none" stroke="#3D4852" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="-8" cy="-5" r="5.5" fill="#FFFFFF" stroke="#3D4852" stroke-width="2"/>
+      <circle cx="8" cy="-5" r="5.5" fill="#FFFFFF" stroke="#3D4852" stroke-width="2"/>
+      <circle cx="-7" cy="-4" r="2.2" fill="#3D4852"/>
+      <circle cx="9" cy="-4" r="2.2" fill="#3D4852"/>
+      <circle cx="-6.2" cy="-5" r="0.8" fill="#FFFFFF"/>
+      <circle cx="9.8" cy="-5" r="0.8" fill="#FFFFFF"/>
+      <path d="M-4 4 Q0 7 4 4" fill="none" stroke="#3D4852" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="-15" cy="1" r="2.5" fill="#F4C2C2"/>
+      <circle cx="15" cy="1" r="2.5" fill="#F4C2C2"/>
+    </g>
+  </g>
+  <path d="M580 396 l4 11 11 4 -11 4 -4 11 -4 -11 -11 -4 11 -4 z" fill="#F0A860" stroke="#3D4852" stroke-width="2"/>
+</svg>

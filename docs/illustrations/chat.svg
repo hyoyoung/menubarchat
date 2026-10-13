@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" font-family="-apple-system, 'Helvetica Neue', 'Apple SD Gothic Neo', Arial, sans-serif">
+  <rect width="800" height="520" fill="#FFF9F2" rx="24"/>
+
+  <!-- menu bar fragment with the app's chat-bubble icon -->
+  <g transform="rotate(-0.6 120 60)">
+    <rect x="40" y="34" width="260" height="46" rx="14" fill="#E9EEF4" stroke="#3D4852" stroke-width="3"/>
+    <g transform="translate(58 46)">
+      <path d="M8 2 h32 a8 8 0 0 1 8 8 v13 a8 8 0 0 1 -8 8 h-15 l-9 9 v-9 h-8 a8 8 0 0 1 -8 -8 v-13 a8 8 0 0 1 8 -8 z"
+            fill="#A8C7E8" stroke="#3D4852" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="18" cy="16" r="2.2" fill="#3D4852"/>
+      <circle cx="27" cy="16" r="2.2" fill="#3D4852"/>
+      <circle cx="36" cy="16" r="2.2" fill="#3D4852"/>
+    </g>
+    <circle cx="278" cy="57" r="4" fill="#3D4852" opacity="0.45"/>
+  </g>
+  <path d="M100 94 C 106 140, 120 152, 152 172" fill="none" stroke="#3D4852" stroke-width="3"
+        stroke-dasharray="1 11" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- chat panel -->
+  <g transform="rotate(-1.2 420 330)">
+    <rect x="150" y="168" width="500" height="322" rx="28" fill="#FFFFFF" stroke="#3D4852" stroke-width="4"/>
+    <line x1="192" y1="212" x2="608" y2="206" stroke="#3D4852" stroke-width="3" stroke-linecap="round" opacity="0.22"/>
+
+    <!-- user bubble -->
+    <g transform="rotate(1.5 480 262)">
+      <rect x="356" y="234" width="242" height="56" rx="20" fill="#A8C7E8" stroke="#3D4852" stroke-width="3.5"/>
+      <path d="M544 288 L578 318 L574 288 Z" fill="#A8C7E8"/>
+      <path d="M544 288 L578 318 L574 288" fill="none" stroke="#3D4852" stroke-width="3.5" stroke-linejoin="round"/>
+      <text x="477" y="269" text-anchor="middle" font-size="22" fill="#20303F">안녕! 👋</text>
+    </g>
+
+    <!-- assistant bubble -->
+    <g transform="rotate(-1 360 364)">
+      <rect x="194" y="318" width="334" height="94" rx="22" fill="#F2F4F7" stroke="#3D4852" stroke-width="3.5"/>
+      <path d="M228 410 L196 436 L256 410 Z" fill="#F2F4F7"/>
+      <path d="M228 410 L196 436 L256 410" fill="none" stroke="#3D4852" stroke-width="3.5" stroke-linejoin="round"/>
+      <text x="361" y="354" text-anchor="middle" font-size="20" fill="#20303F">안녕하세요! ✨</text>
+      <text x="361" y="386" text-anchor="middle" font-size="20" fill="#20303F">무엇을 도와드릴까요?</text>
+    </g>
+    <path d="M548 318 l4 11 11 4 -11 4 -4 11 -4 -11 -11 -4 11 -4 z" fill="#F0A860" stroke="#3D4852" stroke-width="2"/>
+    <path d="M566 296 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" fill="#F4C2C2" stroke="#3D4852" stroke-width="2"/>
+
+    <!-- input bar -->
+    <g transform="rotate(0.8 420 452)">
+      <rect x="194" y="428" width="424" height="44" rx="22" fill="#FFFFFF" stroke="#3D4852" stroke-width="3.5"/>
+      <circle cx="322" cy="450" r="2.6" fill="#3D4852" opacity="0.35"/>
+      <circle cx="341" cy="450" r="2.6" fill="#3D4852" opacity="0.35"/>
+      <circle cx="360" cy="450" r="2.6" fill="#3D4852" opacity="0.35"/>
+      <circle cx="588" cy="450" r="17" fill="#F0A860" stroke="#3D4852" stroke-width="3.5"/>
+      <path d="M581 450 h13 M590 442 l9 8 -9 8" fill="none" stroke="#3D4852" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
