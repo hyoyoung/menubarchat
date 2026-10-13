@@ -5,7 +5,7 @@ import Foundation
 enum SelfTest {
     private static var failures = 0
 
-    static func run() -> Bool {
+    static func run() async -> Bool {
         failures = 0
         nonLastPasteBecomesStub()
         lastPasteIncludesFullText()
@@ -23,6 +23,7 @@ enum SelfTest {
         metaTagExtraction()
         strikethroughStripped()
         boldSurvivesStrikeStrip()
+        await stripFirstExtraction()
         print(failures == 0 ? "selftest: all passed" : "selftest: \(failures) failure(s)")
         return failures == 0
     }
@@ -174,5 +175,13 @@ enum SelfTest {
         let bold = attr.runs.contains { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
         let struck = attr.runs.contains { $0.inlinePresentationIntent?.contains(.strikethrough) == true }
         check(bold && !struck, "bold preserved, strike stripped")
+    }
+
+    private static func stripFirstExtraction() async {
+        let good = String(repeating: "x", count: 300)
+        check(await PageFetcher.resolvedText(stripped: good) { "IMPORTER-RAN" } == good, "sufficient strip skips importer")
+        check(await PageFetcher.resolvedText(stripped: "thin") { good } == good, "thin strip uses importer")
+        check(await PageFetcher.resolvedText(stripped: "thin") { nil } == "thin", "importer failure keeps strip")
+        check(!PageFetcher.isSufficientText("") && PageFetcher.isSufficientText(good), "sufficiency threshold")
     }
 }

@@ -177,30 +177,45 @@ enum PageFetcher {
         metaContent("og:image", in: html).flatMap(URL.init(string:))
     }
 
-    // WebKit's HTML importer can stall its caller, so it runs off the main
-    // actor behind a timeout; if it yields nothing we fall back to a tag strip.
+    // Strip-first: the tag strip is effectively instant and good enough for
+    // normal pages; only thin results (JS shells) pay the WebKit importer,
+    // which can stall its caller and therefore runs behind a short cap.
+    static func isSufficientText(_ text: String) -> Bool {
+        text.count >= 200
+    }
+
+    static func resolvedText(stripped: String, runImporter: @escaping () async -> String?) async -> String {
+        if isSufficientText(stripped) { return stripped }
+        if let converted = await runImporter(), isSufficientText(converted) {
+            return converted
+        }
+        return stripped
+    }
+
     private static func plainText(fromHTML html: String) async -> String {
         let source = String(html.prefix(500_000))
-        let importer = Task.detached(priority: .utility) { () -> String in
-            (NSAttributedString(
-                html: Data(source.utf8),
-                options: [.documentType: NSAttributedString.DocumentType.html],
-                documentAttributes: nil
-            )?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        let converted: String? = await withTaskGroup(of: String?.self) { group in
-            group.addTask { await importer.value }
-            group.addTask {
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
-                return nil
+        let stripped = stripTags(source)
+        return await resolvedText(stripped: stripped) {
+            let importer = Task.detached(priority: .userInitiated) { () -> String in
+                (NSAttributedString(
+                    html: Data(source.utf8),
+                    options: [.documentType: NSAttributedString.DocumentType.html],
+                    documentAttributes: nil
+                )?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             }
-            let first = await group.next() ?? nil
-            group.cancelAll()
-            importer.cancel()
-            return first
+            let converted: String? = await withTaskGroup(of: String?.self) { group in
+                group.addTask { await importer.value }
+                group.addTask {
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    return nil
+                }
+                let first = await group.next() ?? nil
+                group.cancelAll()
+                importer.cancel()
+                return first
+            }
+            return converted
         }
-        if let converted, !converted.isEmpty { return converted }
-        return stripTags(source)
     }
 
     private static func stripTags(_ html: String) -> String {
