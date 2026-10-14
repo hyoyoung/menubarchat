@@ -90,7 +90,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               (event.charactersIgnoringModifiers ?? "").lowercased() == "v"
         else { return event }
         guard let text = NSPasteboard.general.string(forType: .string) else {
-            chat.showPasteNotice()
+            if chat.supportsImageInput,
+               let image = NSImage(pasteboard: NSPasteboard.general),
+               let jpeg = ImageEncoder.jpegData(from: image) {
+                chat.stageImage(jpeg)
+            } else {
+                chat.showPasteNotice()
+            }
             return nil
         }
         if PromptComposer.isLongPaste(text) {

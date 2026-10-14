@@ -9,6 +9,8 @@ struct Message: Identifiable, Equatable {
     var promptTokens: Int?
     var completionTokens: Int?
     var pages: [FetchedPage] = []
+    var imageData: Data?
+    var imageID = 0
     var isReasoningExpanded = false
     var pasteID = 0
     var isTextExpanded = false
@@ -30,10 +32,15 @@ final class ChatModel: ObservableObject {
     @Published var showsSettings = false
     @Published var queuedMessage: String?
     @Published var stagedPaste: String?
+    @Published var stagedImage: Data?
     @Published var pasteNotice: String?
     @Published var followsBottom = true
 
     let settings = SettingsStore()
+
+    var supportsImageInput: Bool {
+        settings.model.lowercased().contains("flash")
+    }
 
     private var streamTask: Task<Void, Never>?
 
@@ -43,9 +50,9 @@ final class ChatModel: ObservableObject {
             stagedPaste = nil
             prompt = prompt.isEmpty ? staged : prompt + "\n" + staged
         }
-        guard !prompt.isEmpty else { return }
+        guard !prompt.isEmpty || stagedImage != nil else { return }
         if isStreaming {
-            if queuedMessage == nil {
+            if stagedImage == nil, queuedMessage == nil {
                 queuedMessage = prompt
                 draft = ""
             }
@@ -73,6 +80,14 @@ final class ChatModel: ObservableObject {
 
     func stagePaste(_ text: String) {
         stagedPaste = text
+    }
+
+    func stageImage(_ data: Data) {
+        stagedImage = data
+    }
+
+    func clearStagedImage() {
+        stagedImage = nil
     }
 
     func clearStaged() {
@@ -114,6 +129,12 @@ final class ChatModel: ObservableObject {
         }
         followsBottom = true
         messages.append(Message(role: .user, text: prompt))
+        if let index = messages.indices.last, let staged = stagedImage {
+            stagedImage = nil
+            messages[index].imageData = staged
+            messages[index].imageID = nextAttachmentID
+            nextAttachmentID += 1
+        }
         if let index = messages.indices.last, PromptComposer.isLongPaste(prompt) {
             messages[index].pasteID = nextAttachmentID
             nextAttachmentID += 1
@@ -179,6 +200,10 @@ final class ChatModel: ObservableObject {
                 isLast: index == messages.count - 1
             ))
         }
+        var lastParts: [[String: Any]]?
+        if PromptComposer.needsImageParts(messages: messages) {
+            lastParts = PromptComposer.imageParts(messages: messages, urlHandling: settings.urlHandling)
+        }
         do {
             let deltas = LLMClient.stream(
                 baseURL: settings.baseURL,
@@ -186,7 +211,8 @@ final class ChatModel: ObservableObject {
                 model: settings.model,
                 thinkingBudget: settings.thinkingBudget,
                 webSearch: settings.webSearch,
-                messages: contents
+                messages: contents,
+                lastContentParts: lastParts
             )
             for try await delta in deltas {
                 appendToAssistant(delta)

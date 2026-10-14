@@ -165,6 +165,31 @@ struct ContentView: View {
                 .padding(.top, 8)
             }
 
+            if let imageData = chat.stagedImage, let nsImage = NSImage(data: imageData) {
+                HStack(spacing: 8) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 36)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    Text("이미지 · 전송 시 첨부")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+                    Button {
+                        chat.clearStagedImage()
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .buttonStyle(.plain)
+                    .help("이미지 첨부 삭제")
+                }
+                .padding(.horizontal, 14)
+                .padding(.top, 8)
+            }
+
             if let queued = chat.queuedMessage {
                 VStack(spacing: 6) {
                     HStack {
@@ -422,6 +447,13 @@ struct MessageView: View {
                     .padding(.vertical, 8)
                     .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                if message.role == .user, let imageData = message.imageData, let nsImage = NSImage(data: imageData) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 120)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 if !message.text.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 // CLT-only builds have no importable test runner (XCTest/Testing), so unit
@@ -23,6 +24,8 @@ enum SelfTest {
         metaTagExtraction()
         strikethroughStripped()
         boldSurvivesStrikeStrip()
+        imageEncoderResize()
+        imageAttachmentComposition()
         await stripFirstExtraction()
         print(failures == 0 ? "selftest: all passed" : "selftest: \(failures) failure(s)")
         return failures == 0
@@ -183,5 +186,41 @@ enum SelfTest {
         check(await PageFetcher.resolvedText(stripped: "thin") { good } == good, "thin strip uses importer")
         check(await PageFetcher.resolvedText(stripped: "thin") { nil } == "thin", "importer failure keeps strip")
         check(!PageFetcher.isSufficientText("") && PageFetcher.isSufficientText(good), "sufficiency threshold")
+    }
+
+    private static func imageEncoderResize() {
+        guard let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: 2000, pixelsHigh: 100,
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+        ) else { check(false, "encoder rep"); return }
+        let image = NSImage(size: NSSize(width: 2000, height: 100))
+        image.addRepresentation(rep)
+        guard let jpeg = ImageEncoder.jpegData(from: image),
+              let decoded = NSBitmapImageRep(data: jpeg) else { check(false, "encoder jpeg"); return }
+        check(decoded.pixelsWide == 1568 && decoded.pixelsHigh == 78, "encoder caps to 1568")
+        check(ImageEncoder.dataURL(fromJPEG: jpeg).hasPrefix("data:image/jpeg;base64,"), "encoder data url prefix")
+    }
+
+    private static func imageAttachmentComposition() {
+        var earlier = Message(role: .user, text: "what is this?")
+        earlier.imageID = 2
+        earlier.imageData = Data([0xFF, 0xD8, 0xFF])
+        var last = Message(role: .user, text: "ID2i 다시 보여줘")
+        last.imageID = 3
+        last.imageData = Data([0x01])
+        let messages = [earlier, Message(role: .assistant, text: "a cat"), last]
+
+        let nonLast = PromptComposer.apiContent(messages: messages, urlHandling: "", for: earlier, isLast: false)
+        check(nonLast.contains(#"[Image ID2i — mention "ID2i" to re-include]"#), "image stub for past message")
+
+        check(PromptComposer.needsImageParts(messages: messages), "needs parts on image mention")
+        let parts = PromptComposer.imageParts(messages: messages, urlHandling: "")
+        check(parts.count == 3, "text + two image parts")
+        check(parts[0]["type"] as? String == "text", "first part is text")
+        let json = (try? JSONSerialization.data(withJSONObject: parts, options: .withoutEscapingSlashes)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        check(json.contains("data:image/jpeg;base64,"), "image data url part")
+
+        check(!PromptComposer.needsImageParts(messages: [Message(role: .user, text: "hi")]), "no parts without image")
     }
 }

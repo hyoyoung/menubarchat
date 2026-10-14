@@ -27,7 +27,8 @@ enum LLMClient {
         model: String,
         thinkingBudget: String,
         webSearch: Bool,
-        messages: [(role: String, content: String)]
+        messages: [(role: String, content: String)],
+        lastContentParts: [[String: Any]]? = nil
     ) -> AsyncThrowingStream<Delta, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
@@ -43,12 +44,16 @@ enum LLMClient {
                     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
                     request.timeoutInterval = 300
 
+                    var payloadMessages: [[String: Any]] = messages.map { ["role": $0.role, "content": $0.content] }
+                    if let parts = lastContentParts, !payloadMessages.isEmpty {
+                        payloadMessages[payloadMessages.count - 1]["content"] = parts
+                    }
                     var payload: [String: Any] = [
                         "model": model,
                         "stream": true,
                         // Always-thinking models (glm-5.x) reject "type"; the budget field sets the level.
                         "thinking": ["budget": thinkingBudget],
-                        "messages": messages.map { ["role": $0.role, "content": $0.content] },
+                        "messages": payloadMessages,
                     ]
                     if webSearch {
                         payload["tools"] = [["type": "web_search", "web_search": ["enable": true, "search_result": true]]]
