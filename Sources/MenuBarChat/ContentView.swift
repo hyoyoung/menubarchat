@@ -4,6 +4,21 @@ struct ContentView: View {
     @EnvironmentObject private var chat: ChatModel
     @FocusState private var focused: Bool
 
+    private func handleImageDrop(_ urls: [URL]) -> Bool {
+        guard let url = urls.first,
+              ImageEncoder.imageExtensions.contains(url.pathExtension.lowercased()),
+              let image = NSImage(contentsOf: url)
+        else { return false }
+        guard chat.supportsImageInput,
+              let jpeg = ImageEncoder.jpegData(from: image)
+        else {
+            chat.showPasteNotice()
+            return true
+        }
+        chat.stageImage(jpeg)
+        return true
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -117,6 +132,9 @@ struct ContentView: View {
                             .padding(.bottom, 8)
                             .help("맨 아래로 이동")
                         }
+                    }
+                    .dropDestination(for: URL.self) { urls, _ in
+                        handleImageDrop(urls)
                     }
                 }
             }
@@ -248,6 +266,9 @@ struct ContentView: View {
                     .textFieldStyle(.plain)
                     .lineLimit(1...5)
                     .focused($focused)
+                    .onChange(of: chat.draft) { _, _ in
+                        chat.convertDraftImage()
+                    }
                     .onSubmit {
                         if chat.queuedMessage != nil,
                            chat.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -255,6 +276,11 @@ struct ContentView: View {
                         } else {
                             chat.send()
                         }
+                    }
+                    // The backing field editor inserts file paths on drops
+                    // by default; claiming the drop here prevents that.
+                    .dropDestination(for: URL.self) { urls, _ in
+                        handleImageDrop(urls)
                     }
 
                 Button {

@@ -6,7 +6,7 @@ final class ChatPanel: NSPanel {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let chat = ChatModel()
     private var statusItem: NSStatusItem!
     private var panel: ChatPanel!
@@ -41,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false
+        panel.delegate = self
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.setFrame(NSRect(x: 0, y: 0, width: 400, height: 520), display: false)
@@ -72,6 +73,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Programmatic auto-scroll never produces scroll-wheel events, so an
     // upward wheel gesture is the only thing that breaks bottom-following.
+    func windowWillReturnFieldEditor(_ sender: NSWindow, to client: Any?) -> Any? {
+        guard sender === panel else { return nil }
+        if fieldEditor == nil {
+            fieldEditor = ChatFieldEditor()
+        }
+        return fieldEditor
+    }
+
+    private var fieldEditor: ChatFieldEditor?
+
     private func interceptScroll(_ event: NSEvent) {
         guard event.window === panel else { return }
         let scrollingUp = (event.scrollingDeltaY > 0) != event.isDirectionInvertedFromDevice
@@ -97,9 +108,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hasImage = hasImageData
             || (pasteboard.data(forType: .fileURL) != nil && NSImage(pasteboard: pasteboard) != nil)
         let string = pasteboard.string(forType: .string) ?? ""
-        if hasImage, string.isEmpty || pasteboard.string(forType: .fileURL) != nil {
+        if hasImage, string.isEmpty || ImageEncoder.isImagePathString(string) {
+            if chat.supportsImageInput {
+                let image = NSImage(pasteboard: pasteboard)
+                    ?? ImageEncoder.imageFileURL(fromPathString: string).flatMap { NSImage(contentsOf: $0) }
+                if let image, let jpeg = ImageEncoder.jpegData(from: image) {
+                    chat.stageImage(jpeg)
+                    return nil
+                }
+            }
+            chat.showPasteNotice()
+            return nil
+        }
+        if ImageEncoder.isImagePathString(string) {
             if chat.supportsImageInput,
-               let image = NSImage(pasteboard: pasteboard),
+               let url = ImageEncoder.imageFileURL(fromPathString: string),
+               let image = NSImage(contentsOf: url),
                let jpeg = ImageEncoder.jpegData(from: image) {
                 chat.stageImage(jpeg)
             } else {
@@ -173,6 +197,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func showAbout(_ sender: Any?) {
         showPanelBelowIcon(aboutPanel)
+    }
+}
+
+// The default field editor accepts file drops by inserting their paths as
+// text; image drops belong to the chat area's drop target instead, so the
+// editor declines file drags and lets them bubble outward.
+final class ChatFieldEditor: NSTextView {
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        guard sender.draggingPasteboard.data(forType: .fileURL) == nil else { return [] }
+        return super.draggingEntered(sender)
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard sender.draggingPasteboard.data(forType: .fileURL) == nil else { return false }
+        return super.performDragOperation(sender)
     }
 }
 

@@ -25,6 +25,7 @@ enum SelfTest {
         strikethroughStripped()
         boldSurvivesStrikeStrip()
         imageEncoderResize()
+        imagePathDetection()
         imageAttachmentComposition()
         await stripFirstExtraction()
         print(failures == 0 ? "selftest: all passed" : "selftest: \(failures) failure(s)")
@@ -200,6 +201,14 @@ enum SelfTest {
               let decoded = NSBitmapImageRep(data: jpeg) else { check(false, "encoder jpeg"); return }
         check(decoded.pixelsWide == 1568 && decoded.pixelsHigh == 78, "encoder caps to 1568")
         check(ImageEncoder.dataURL(fromJPEG: jpeg).hasPrefix("data:image/jpeg;base64,"), "encoder data url prefix")
+    }
+
+    private static func imagePathDetection() {
+        check(ImageEncoder.imageFileURL(fromPathString: "/System/Library/CoreServices/DefaultDesktop.heic") != nil, "image path detected")
+        check(ImageEncoder.imageFileURL(fromPathString: "/etc/hosts") == nil, "non-image path ignored")
+        check(ImageEncoder.imageFileURL(fromPathString: "hello world") == nil, "plain text ignored")
+        check(ImageEncoder.imageFileURL(fromPathString: "/nonexistent/folder/cat.png") == nil, "missing file ignored")
+        check(ImageEncoder.isImagePathString("/nonexistent/folder/cat.png"), "path shape without file still image-shaped")
     }
 
     private static func imageAttachmentComposition() {

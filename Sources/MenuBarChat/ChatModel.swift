@@ -50,6 +50,22 @@ final class ChatModel: ObservableObject {
             stagedPaste = nil
             prompt = prompt.isEmpty ? staged : prompt + "\n" + staged
         }
+        // Safety net: an image file path that reached the draft (drag flows)
+        // is an image attachment at send time, never message text.
+        if ImageEncoder.isImagePathString(prompt) {
+            if let url = ImageEncoder.imageFileURL(fromPathString: prompt),
+               supportsImageInput,
+               let image = NSImage(contentsOf: url),
+               let jpeg = ImageEncoder.jpegData(from: image) {
+                stagedImage = jpeg
+                prompt = ""
+                draft = ""
+            } else {
+                draft = ""
+                showPasteNotice()
+                return
+            }
+        }
         guard !prompt.isEmpty || stagedImage != nil else { return }
         if isStreaming {
             if stagedImage == nil, queuedMessage == nil {
@@ -84,6 +100,23 @@ final class ChatModel: ObservableObject {
 
     func stageImage(_ data: Data) {
         stagedImage = data
+    }
+
+    // Whatever route an image file path arrives by (drag, context-menu
+    // paste, …), a path-only draft means an image attachment, not text.
+    func convertDraftImage() {
+        guard ImageEncoder.isImagePathString(draft) else { return }
+        guard let url = ImageEncoder.imageFileURL(fromPathString: draft),
+              supportsImageInput,
+              let image = NSImage(contentsOf: url),
+              let jpeg = ImageEncoder.jpegData(from: image)
+        else {
+            draft = ""
+            showPasteNotice()
+            return
+        }
+        stagedImage = jpeg
+        draft = ""
     }
 
     func clearStagedImage() {

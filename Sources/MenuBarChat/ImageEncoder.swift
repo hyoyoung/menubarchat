@@ -3,6 +3,26 @@ import AppKit
 enum ImageEncoder {
     static let maxDimension: CGFloat = 1568
 
+    static let imageExtensions: Set<String> = [
+        "png", "jpg", "jpeg", "gif", "webp", "tiff", "tif", "heic", "bmp",
+    ]
+
+    // Some capture flows put only the file path string on the pasteboard;
+    // a path-shaped string (absolute path + image extension) marks an image
+    // paste whether or not the backing temp file still exists.
+    static func isImagePathString(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.hasPrefix("/") else { return false }
+        return imageExtensions.contains(URL(fileURLWithPath: trimmed).pathExtension.lowercased())
+    }
+
+    static func imageFileURL(fromPathString text: String) -> URL? {
+        guard isImagePathString(text) else { return nil }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard FileManager.default.fileExists(atPath: trimmed) else { return nil }
+        return URL(fileURLWithPath: trimmed)
+    }
+
     static func jpegData(from image: NSImage) -> Data? {
         bitmapRep(from: image)?.representation(using: .jpeg, properties: [.compressionFactor: 0.7])
     }
