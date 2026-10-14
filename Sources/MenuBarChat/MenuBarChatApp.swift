@@ -89,14 +89,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               event.modifierFlags.contains(.command),
               (event.charactersIgnoringModifiers ?? "").lowercased() == "v"
         else { return event }
-        guard let text = NSPasteboard.general.string(forType: .string) else {
+        let pasteboard = NSPasteboard.general
+        // An image file paste advertises its file path as the string; that
+        // path is part of the image paste, not independent text.
+        let hasImageData = pasteboard.data(forType: .png) != nil
+            || pasteboard.data(forType: .tiff) != nil
+        let hasImage = hasImageData
+            || (pasteboard.data(forType: .fileURL) != nil && NSImage(pasteboard: pasteboard) != nil)
+        let string = pasteboard.string(forType: .string) ?? ""
+        if hasImage, string.isEmpty || pasteboard.string(forType: .fileURL) != nil {
             if chat.supportsImageInput,
-               let image = NSImage(pasteboard: NSPasteboard.general),
+               let image = NSImage(pasteboard: pasteboard),
                let jpeg = ImageEncoder.jpegData(from: image) {
                 chat.stageImage(jpeg)
             } else {
                 chat.showPasteNotice()
             }
+            return nil
+        }
+        guard let text = pasteboard.string(forType: .string) else {
+            chat.showPasteNotice()
             return nil
         }
         if PromptComposer.isLongPaste(text) {
