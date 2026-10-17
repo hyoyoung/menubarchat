@@ -14,9 +14,27 @@ struct Message: Identifiable, Equatable {
     var isReasoningExpanded = false
     var pasteID = 0
     var isTextExpanded = false
+    // Render-only caches (markdown parse, decoded thumbnail) — excluded
+    // from equality; derived from the fields above.
+    var cachedMarkdown: AttributedString?
+    var cachedImage: NSImage?
 
     enum Role: String {
         case user, assistant
+    }
+
+    static func == (lhs: Message, rhs: Message) -> Bool {
+        lhs.role == rhs.role
+            && lhs.text == rhs.text
+            && lhs.reasoning == rhs.reasoning
+            && lhs.promptTokens == rhs.promptTokens
+            && lhs.completionTokens == rhs.completionTokens
+            && lhs.pages == rhs.pages
+            && lhs.imageData == rhs.imageData
+            && lhs.imageID == rhs.imageID
+            && lhs.isReasoningExpanded == rhs.isReasoningExpanded
+            && lhs.pasteID == rhs.pasteID
+            && lhs.isTextExpanded == rhs.isTextExpanded
     }
 }
 
@@ -166,6 +184,7 @@ final class ChatModel: ObservableObject {
             stagedImage = nil
             messages[index].imageData = staged
             messages[index].imageID = nextAttachmentID
+            messages[index].cachedImage = NSImage(data: staged)
             nextAttachmentID += 1
         }
         if let index = messages.indices.last, PromptComposer.isLongPaste(prompt) {
@@ -250,6 +269,7 @@ final class ChatModel: ObservableObject {
             for try await delta in deltas {
                 appendToAssistant(delta)
             }
+            finalizeLastAssistantMarkdown()
         } catch {
             if Task.isCancelled { return }
             if let last = messages.last, last.role == .assistant,
@@ -258,6 +278,14 @@ final class ChatModel: ObservableObject {
             }
             messages.append(Message(role: .assistant, text: "Error: \(error.localizedDescription)"))
         }
+    }
+
+    private func finalizeLastAssistantMarkdown() {
+        guard let index = messages.indices.last,
+              messages[index].role == .assistant,
+              messages[index].cachedMarkdown == nil
+        else { return }
+        messages[index].cachedMarkdown = MessageView.markdown(messages[index].text)
     }
 
     private func appendToAssistant(_ delta: LLMClient.Delta) {

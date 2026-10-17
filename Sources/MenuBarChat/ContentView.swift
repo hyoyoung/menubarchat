@@ -70,6 +70,7 @@ struct ContentView: View {
                             LazyVStack(alignment: .leading, spacing: 8) {
                                 ForEach(chat.messages) { message in
                                     MessageView(message: message)
+                                        .equatable()
                                         .id(message.id)
                                 }
                                 if chat.isStreaming,
@@ -400,9 +401,15 @@ struct AboutView: View {
     }
 }
 
-struct MessageView: View {
+struct MessageView: View, Equatable {
     let message: Message
     @EnvironmentObject private var chat: ChatModel
+
+    static func == (lhs: MessageView, rhs: MessageView) -> Bool {
+        lhs.message == rhs.message
+            && lhs.chat.copiedMessageID == rhs.chat.copiedMessageID
+            && lhs.chat.hoveredMessageID == rhs.chat.hoveredMessageID
+    }
 
     static func markdown(_ text: String) -> AttributedString {
         var options = AttributedString.MarkdownParsingOptions()
@@ -474,7 +481,8 @@ struct MessageView: View {
                     .background(Color(nsColor: .controlBackgroundColor).opacity(0.6))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                if message.role == .user, let imageData = message.imageData, let nsImage = NSImage(data: imageData) {
+                if message.role == .user,
+                   let nsImage = message.cachedImage ?? message.imageData.flatMap({ NSImage(data: $0) }) {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
@@ -515,7 +523,7 @@ struct MessageView: View {
                             .foregroundStyle(.secondary)
                             .buttonStyle(.plain)
                         } else if message.role == .assistant {
-                            Text(Self.markdown(message.text))
+                            Text(message.cachedMarkdown ?? Self.markdown(message.text))
                                 .textSelection(.enabled)
                         } else {
                             Text(message.text)
