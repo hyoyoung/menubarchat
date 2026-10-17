@@ -69,7 +69,11 @@ struct ContentView: View {
                         } else {
                             LazyVStack(alignment: .leading, spacing: 8) {
                                 ForEach(chat.messages) { message in
-                                    MessageView(message: message)
+                                    MessageView(
+                                        message: message,
+                                        copiedMessageID: chat.copiedMessageID,
+                                        hoveredMessageID: chat.hoveredMessageID
+                                    )
                                         .equatable()
                                         .id(message.id)
                                 }
@@ -403,12 +407,17 @@ struct AboutView: View {
 
 struct MessageView: View, Equatable {
     let message: Message
+    var copiedMessageID: UUID?
+    var hoveredMessageID: UUID?
     @EnvironmentObject private var chat: ChatModel
 
+    // Equality must only touch stored properties: SwiftUI runs it outside
+    // the update pass, where @EnvironmentObject is not injected and reading
+    // it traps (crash MenuBarChat-2026-10-17-165436).
     static func == (lhs: MessageView, rhs: MessageView) -> Bool {
         lhs.message == rhs.message
-            && lhs.chat.copiedMessageID == rhs.chat.copiedMessageID
-            && lhs.chat.hoveredMessageID == rhs.chat.hoveredMessageID
+            && lhs.copiedMessageID == rhs.copiedMessageID
+            && lhs.hoveredMessageID == rhs.hoveredMessageID
     }
 
     static func markdown(_ text: String) -> AttributedString {
@@ -535,7 +544,7 @@ struct MessageView: View, Equatable {
                                 Button {
                                     chat.copyAnswer(message)
                                 } label: {
-                                    Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
+                                    Image(systemName: copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -554,11 +563,11 @@ struct MessageView: View, Equatable {
                     .overlay(alignment: .bottomTrailing) {
                         // Overlay keeps the bubble size stable while hovering.
                         if message.role == .user,
-                           chat.hoveredMessageID == message.id || chat.copiedMessageID == message.id {
+                           hoveredMessageID == message.id || copiedMessageID == message.id {
                             Button {
                                 chat.copyAnswer(message)
                             } label: {
-                                Image(systemName: chat.copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
+                                Image(systemName: copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .padding(4)
