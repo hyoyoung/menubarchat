@@ -12,8 +12,10 @@ Z.AI GLM API(OpenAI 호환)와의 HTTP 계약.
 대화를 담은 `{model, stream: true, thinking: {budget: <사고 수준>},
 messages: [{role, content}]}` JSON이다. messages는 모든 사용자 메시지와
 **직전 어시스턴트 답변 1개만** 포함한다 — 더 오래된 어시스턴트 답변은
-전송에서 제외되며 스텁으로도 남기지 않는다. 마지막 사용자 메시지에 이미지
-첨부가 있으면 그 메시지의 content는
+전송에서 제외되며 스텁으로도 남기지 않는다. 단, 보내는 마지막 사용자
+메시지가 텍스트 없이 URL 또는 이미지만 담고 있으면 직전 답변도
+제외한다. 마지막 사용자 메시지에 이미지 첨부가 있으면 그 메시지의
+content는
 `[{type: "text"}, {type: "image_url", image_url: {url: <Base64 Data URL>}}]`
 파트 배열이고, 나머지 메시지는 문자열 content를 유지한다. 웹 검색이
 켜져 있으면 `tools: [{"type": "web_search", "web_search": {"enable":
@@ -33,6 +35,10 @@ true, "search_result": true}}]`를 함께 보낸다. 기본 구성(저장된 설
 - **WHEN** 어시스턴트 답변이 2개 이상 쌓인 대화에서 요청을 보내면
 - **THEN** 직전 답변 1개만 messages에 포함되고 나머지 답변은 전송되지
   않는다
+
+#### Scenario: 텍스트 없는 전송은 직전 답변도 제외
+- **WHEN** 마지막 사용자 메시지가 URL만 또는 이미지만 담고 있으면
+- **THEN** messages에 어시스턴트 답변이 하나도 포함되지 않는다
 
 ### Requirement: 사고(thinking) 예산
 설정의 사고 수준(`low`/`medium`/`high`/`max`)을 `{"budget": <수준>}`으로

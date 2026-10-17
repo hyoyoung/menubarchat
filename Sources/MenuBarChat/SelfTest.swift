@@ -223,6 +223,15 @@ enum SelfTest {
         let transcript = PromptComposer.transcript(messages: messages, urlHandling: "")
         check(transcript.map(\.role) == ["user", "user", "assistant", "user"], "only last assistant reply kept")
         check(transcript.map(\.content) == ["q1", "q2", "a2", "q3"], "users kept in order")
+
+        let urlOnly = Message(role: .user, text: "https://example.com")
+        let withURL = [Message(role: .user, text: "q1"), Message(role: .assistant, text: "a1"), urlOnly]
+        check(PromptComposer.transcript(messages: withURL, urlHandling: "").map(\.role) == ["user", "user"], "URL-only send drops last reply")
+
+        var imageOnly = Message(role: .user, text: "")
+        imageOnly.imageData = Data([1])
+        let withImage = [Message(role: .user, text: "q1"), Message(role: .assistant, text: "a1"), imageOnly]
+        check(PromptComposer.transcript(messages: withImage, urlHandling: "").map(\.role) == ["user", "user"], "image-only send drops last reply")
     }
 
     private static func imageAttachmentComposition() {

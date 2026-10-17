@@ -66,8 +66,16 @@ enum PromptComposer {
     // K=1 transcript: every user message plus only the most recent
     // assistant reply — older replies are excluded outright (user's choice:
     // maximum token savings, accepted loss of older-reply recall).
+    // A textless last user message (bare URL or image only) cannot reference
+    // prior conversation, so even the last reply is excluded there (K=0).
     static func transcript(messages: [Message], urlHandling: String) -> [(role: String, content: String)] {
-        let lastAssistantIndex = messages.lastIndex(where: { $0.role == .assistant })
+        let lastUser = messages.last(where: { $0.role == .user })
+        var textless = false
+        if let lastUser {
+            let trimmed = lastUser.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            textless = trimmed.isEmpty ? lastUser.imageData != nil : isURLOnly(lastUser.text)
+        }
+        let lastAssistantIndex = textless ? nil : messages.lastIndex(where: { $0.role == .assistant })
         return messages.enumerated().compactMap { index, message in
             if message.role == .assistant, index != lastAssistantIndex {
                 return nil
