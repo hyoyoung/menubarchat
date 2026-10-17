@@ -27,6 +27,7 @@ enum SelfTest {
         imageEncoderResize()
         imagePathDetection()
         transcriptWindowing()
+        slashCommandExpansion()
         mathConversion()
         imageAttachmentComposition()
         await stripFirstExtraction()
@@ -233,6 +234,20 @@ enum SelfTest {
         imageOnly.imageData = Data([1])
         let withImage = [Message(role: .user, text: "q1"), Message(role: .assistant, text: "a1"), imageOnly]
         check(PromptComposer.transcript(messages: withImage, urlHandling: "").map(\.role) == ["user", "user"], "image-only send drops last reply")
+    }
+
+    private static func slashCommandExpansion() {
+        let commands = [SlashCommand(name: "news", prompt: "digest prompt")]
+        check(SlashCommands.expand("/news", commands: commands) == "digest prompt", "slash command expands")
+        check(SlashCommands.expand("/news extra input", commands: commands) == "digest prompt\nextra input", "rest appended on new line")
+        check(SlashCommands.expand("/foo", commands: commands) == nil, "unknown command untouched")
+        check(SlashCommands.expand("plain text", commands: commands) == nil, "non-slash untouched")
+        check(SlashCommands.completions(for: "/ne", commands: commands).count == 1, "prefix completion")
+        check(SlashCommands.completions(for: "/news extra", commands: commands).isEmpty, "no completion with args")
+        let seeded = SettingsStore.defaultCommands
+        check(seeded.first?.name == "news", "news command seeded")
+        check((seeded.first?.prompt.contains("news.ycombinator.com") ?? false)
+            && (seeded.first?.prompt.contains("news.naver.com") ?? false), "seed prompt covers sources")
     }
 
     private static func mathConversion() {

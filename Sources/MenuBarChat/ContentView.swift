@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var chat: ChatModel
+    @EnvironmentObject private var settings: SettingsStore
     @FocusState private var focused: Bool
 
     private func handleImageDrop(_ urls: [URL]) -> Bool {
@@ -271,6 +272,12 @@ struct ContentView: View {
                     .textFieldStyle(.plain)
                     .lineLimit(1...5)
                     .focused($focused)
+                    .onKeyPress(.tab, phases: .down) { _ in
+                        guard let first = SlashCommands.completions(for: chat.draft, commands: settings.commands).first
+                        else { return .ignored }
+                        chat.applyCommand(first)
+                        return .handled
+                    }
                     .onChange(of: chat.draft) { _, _ in
                         chat.convertDraftImage()
                     }
@@ -301,6 +308,27 @@ struct ContentView: View {
                 .buttonStyle(.plain)
                 .disabled(!chat.isStreaming
                     && chat.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            .overlay(alignment: .top) {
+                let completions = SlashCommands.completions(for: chat.draft, commands: settings.commands)
+                if !completions.isEmpty, !chat.showsSettings {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(completions) { command in
+                            Button {
+                                chat.applyCommand(command)
+                            } label: {
+                                Text("/" + command.name)
+                                    .font(.callout.monospaced())
+                                    .foregroundStyle(.primary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .offset(y: -46)
+                }
             }
             .padding(14)
         }
@@ -364,6 +392,33 @@ struct SettingsView: View {
             HStack {
                 Text("URL handling")
                 TextField("http/https default handling", text: $settings.urlHandling)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Commands")
+                ForEach($settings.commands) { $command in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            TextField("name", text: $command.name)
+                                .frame(maxWidth: 120)
+                            Button {
+                                settings.commands.removeAll { $0.id == command.id }
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                        }
+                        TextField("prompt", text: $command.prompt, axis: .vertical)
+                            .lineLimit(2...5)
+                    }
+                }
+                Button {
+                    settings.commands.append(SlashCommand(name: "", prompt: ""))
+                } label: {
+                    Label("Add command", systemImage: "plus")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
             }
         }
         .textFieldStyle(.roundedBorder)

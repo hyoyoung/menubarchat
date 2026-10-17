@@ -64,6 +64,10 @@ final class ChatModel: ObservableObject {
 
     func send() {
         var prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let expanded = SlashCommands.expand(prompt, commands: settings.commands) {
+            prompt = expanded
+            draft = ""
+        }
         if let staged = stagedPaste {
             stagedPaste = nil
             prompt = prompt.isEmpty ? staged : prompt + "\n" + staged
@@ -114,6 +118,13 @@ final class ChatModel: ObservableObject {
 
     func stagePaste(_ text: String) {
         stagedPaste = text
+    }
+
+    func applyCommand(_ command: SlashCommand) {
+        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rest = trimmed.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true)
+            .dropFirst().first.map(String.init) ?? ""
+        draft = rest.isEmpty ? command.prompt : command.prompt + "\n" + rest
     }
 
     func stageImage(_ data: Data) {
