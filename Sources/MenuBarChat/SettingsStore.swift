@@ -64,19 +64,19 @@ final class SettingsStore: ObservableObject {
         SlashCommand(
             name: "news",
             prompt: """
-            다음 뉴스 사이트들의 내용을 종합해 주세요: \
+            Summarize the content from these news sites: \
             https://news.ycombinator.com/news \
             https://www.bbc.com/news \
             https://edition.cnn.com/us \
             https://news.naver.com/ — \
-            기술 뉴스 상위 15개(제목 + 한 줄 요약 + 출처 사이트)를 뽑고, \
-            이어서 놓치면 안 되는 중요하거나 이색적인 비기술 사건을 별도 \
-            섹션으로 정리해 주세요.
+            pick the top 15 tech stories (title + one-line summary + source) \
+            and add a separate section of important or unusual non-tech events. \
+            Write the digest in \(systemLanguageName).
             """
         ),
     ]
 
-    private static var systemLanguageName: String {
+    nonisolated static var systemLanguageName: String {
         let code = Locale.current.language.languageCode?.identifier ?? "en"
         return Locale(identifier: "en_US").localizedString(forLanguageCode: code) ?? "English"
     }

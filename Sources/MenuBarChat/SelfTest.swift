@@ -248,6 +248,8 @@ enum SelfTest {
         check(seeded.first?.name == "news", "news command seeded")
         check((seeded.first?.prompt.contains("news.ycombinator.com") ?? false)
             && (seeded.first?.prompt.contains("news.naver.com") ?? false), "seed prompt covers sources")
+        check((seeded.first?.prompt.contains("Write the digest in \(SettingsStore.systemLanguageName)") ?? false)
+            && (seeded.first?.prompt.hasPrefix("Summarize") ?? false), "seed prompt english with system language")
     }
 
     private static func mathConversion() {
