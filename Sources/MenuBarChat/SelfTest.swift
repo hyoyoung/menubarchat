@@ -27,6 +27,7 @@ enum SelfTest {
         imageEncoderResize()
         imagePathDetection()
         transcriptWindowing()
+        mathConversion()
         imageAttachmentComposition()
         await stripFirstExtraction()
         print(failures == 0 ? "selftest: all passed" : "selftest: \(failures) failure(s)")
@@ -232,6 +233,15 @@ enum SelfTest {
         imageOnly.imageData = Data([1])
         let withImage = [Message(role: .user, text: "q1"), Message(role: .assistant, text: "a1"), imageOnly]
         check(PromptComposer.transcript(messages: withImage, urlHandling: "").map(\.role) == ["user", "user"], "image-only send drops last reply")
+    }
+
+    private static func mathConversion() {
+        check(MathFormatter.unicodeMath(in: "$f(x) = \\sum_i v_i (k_i^\\top x)$") == "f(x) = Σᵢ vᵢ (kᵢᵀ x)", "sum with subscripts converts")
+        check(MathFormatter.unicodeMath(in: "$\\alpha + \\frac{a}{b} \\leq \\pi$") == "α + (a)/(b) ≤ π", "greek and frac convert")
+        let unknown = MathFormatter.unicodeMath(in: "$\\unknowncmd{x} + y$")
+        check(unknown.hasPrefix("\\unknowncmd") && unknown.hasSuffix("x + y"), "unknown command preserved")
+        check(MathFormatter.unicodeMath(in: "costs $5 and $6 total") == "costs $5 and $6 total", "currency untouched")
+        check(MathFormatter.unicodeMath(in: "no math **bold** here") == "no math **bold** here", "non-math untouched")
     }
 
     private static func imageAttachmentComposition() {

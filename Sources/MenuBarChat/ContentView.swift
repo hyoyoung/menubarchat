@@ -421,9 +421,10 @@ struct MessageView: View, Equatable {
     }
 
     static func markdown(_ text: String) -> AttributedString {
+        let source = MathFormatter.unicodeMath(in: text)
         var options = AttributedString.MarkdownParsingOptions()
         options.interpretedSyntax = .inlineOnlyPreservingWhitespace
-        var attr = (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
+        var attr = (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
         // The spec promises no strikethrough, and GFM ~~ pairs can span
         // newlines and strike unrelated lines, so the intent is dropped.
         for run in attr.runs {
