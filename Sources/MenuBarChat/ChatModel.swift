@@ -14,6 +14,7 @@ struct Message: Identifiable, Equatable {
     var isReasoningExpanded = false
     var pasteID = 0
     var isTextExpanded = false
+    var viaCommand = false
     // Render-only caches (markdown parse, decoded thumbnail) — excluded
     // from equality; derived from the fields above.
     var cachedMarkdown: AttributedString?
@@ -35,6 +36,7 @@ struct Message: Identifiable, Equatable {
             && lhs.isReasoningExpanded == rhs.isReasoningExpanded
             && lhs.pasteID == rhs.pasteID
             && lhs.isTextExpanded == rhs.isTextExpanded
+            && lhs.viaCommand == rhs.viaCommand
     }
 }
 
@@ -44,11 +46,13 @@ final class ChatModel: ObservableObject {
     @Published var draft = ""
     @Published var isStreaming = false
     @Published var isFetchingPage = false
+    @Published var fetchingPageCount = 0
     @Published var copiedMessageID: UUID?
     @Published var hoveredMessageID: UUID?
     private var nextAttachmentID = 1
     @Published var showsSettings = false
     @Published var queuedMessage: String?
+    private var queuedViaCommand = false
     @Published var stagedPaste: String?
     @Published var stagedImage: Data?
     @Published var pasteNotice: String?
@@ -64,9 +68,11 @@ final class ChatModel: ObservableObject {
 
     func send() {
         var prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        var viaCommand = false
         if let expanded = SlashCommands.expand(prompt, commands: settings.commands) {
             prompt = expanded
             draft = ""
+            viaCommand = true
         }
         if let staged = stagedPaste {
             stagedPaste = nil
@@ -92,6 +98,7 @@ final class ChatModel: ObservableObject {
         if isStreaming {
             if stagedImage == nil, queuedMessage == nil {
                 queuedMessage = prompt
+                queuedViaCommand = viaCommand
                 draft = ""
             }
             return
@@ -101,7 +108,7 @@ final class ChatModel: ObservableObject {
             return
         }
         draft = ""
-        sendNow(prompt)
+        sendNow(prompt, viaCommand: viaCommand)
     }
 
     private var hasAPIKey: Bool {
@@ -120,11 +127,13 @@ final class ChatModel: ObservableObject {
         stagedPaste = text
     }
 
+    // Completion (click or Tab) finishes the /token to the full command
+    // name only — the prompt itself expands at send time.
     func applyCommand(_ command: SlashCommand) {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        let rest = trimmed.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true)
-            .dropFirst().first.map(String.init) ?? ""
-        draft = rest.isEmpty ? command.prompt : command.prompt + "\n" + rest
+        let parts = trimmed.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true)
+        let rest = parts.count > 1 ? " " + String(parts[1]) : ""
+        draft = "/\(command.name)" + rest + " "
     }
 
     func stageImage(_ data: Data) {
@@ -184,13 +193,16 @@ final class ChatModel: ObservableObject {
         }
     }
 
-    private func sendNow(_ prompt: String) {
+    private func sendNow(_ prompt: String, viaCommand: Bool = false) {
         guard hasAPIKey else {
             showEmptyKeyHint()
             return
         }
         followsBottom = true
         messages.append(Message(role: .user, text: prompt))
+        if let index = messages.indices.last, viaCommand {
+            messages[index].viaCommand = true
+        }
         if let index = messages.indices.last, let staged = stagedImage {
             stagedImage = nil
             messages[index].imageData = staged
@@ -212,7 +224,9 @@ final class ChatModel: ObservableObject {
             streamTask = nil
             if let queued = queuedMessage {
                 queuedMessage = nil
-                sendNow(queued)
+                let wasCommand = queuedViaCommand
+                queuedViaCommand = false
+                sendNow(queued, viaCommand: wasCommand)
             }
         }
     }
@@ -240,18 +254,42 @@ final class ChatModel: ObservableObject {
         guard let index = messages.indices.last, messages[index].role == .user else { return }
         // URLs embedded in a long paste are part of the pasted content, not a fetch target.
         guard messages[index].pasteID == 0 else { return }
-        guard let url = PageFetcher.urls(in: messages[index].text).first else { return }
+        let all = PageFetcher.urls(in: messages[index].text)
+        guard !all.isEmpty else { return }
+        // Only command-expanded messages fetch every URL (cap 10); regular
+        // messages keep the single-first-URL behavior.
+        let targets = messages[index].viaCommand ? Array(all.prefix(10)) : [all[0]]
         if Task.isCancelled { return }
         isFetchingPage = true
-        defer { isFetchingPage = false }
-        var page = await PageFetcher.fetchPage(url)
-        if Task.isCancelled { return }
-        guard messages.indices.contains(index), messages[index].role == .user else { return }
-        if page.error == nil {
-            page.id = nextAttachmentID
-            nextAttachmentID += 1
+        fetchingPageCount = targets.count
+        defer {
+            isFetchingPage = false
+            fetchingPageCount = 0
         }
-        messages[index].pages.append(page)
+        var nextIndex = 0
+        await withTaskGroup(of: FetchedPage.self) { group in
+            func enqueueNext() {
+                guard nextIndex < targets.count else { return }
+                let url = targets[nextIndex]
+                nextIndex += 1
+                group.addTask { await PageFetcher.fetchPage(url) }
+            }
+            // Sliding window of 2: refill as each fetch completes.
+            enqueueNext()
+            if targets.count > 1 { enqueueNext() }
+            while let fetched = await group.next() {
+                if Task.isCancelled { group.cancelAll(); return }
+                guard messages.indices.contains(index), messages[index].role == .user
+                else { group.cancelAll(); return }
+                var page = fetched
+                if page.error == nil {
+                    page.id = nextAttachmentID
+                    nextAttachmentID += 1
+                }
+                messages[index].pages.append(page)
+                enqueueNext()
+            }
+        }
     }
 
     private func stream() async {

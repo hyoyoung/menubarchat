@@ -27,6 +27,7 @@ enum SelfTest {
         imageEncoderResize()
         imagePathDetection()
         transcriptWindowing()
+        pageExcerpts()
         slashCommandExpansion()
         mathConversion()
         imageAttachmentComposition()
@@ -234,6 +235,25 @@ enum SelfTest {
         imageOnly.imageData = Data([1])
         let withImage = [Message(role: .user, text: "q1"), Message(role: .assistant, text: "a1"), imageOnly]
         check(PromptComposer.transcript(messages: withImage, urlHandling: "").map(\.role) == ["user", "user"], "image-only send drops last reply")
+    }
+
+    private static func pageExcerpts() {
+        let page = { FetchedPage(host: "example.com", text: $0, imageURL: nil, error: nil) }
+        let short = String(repeating: "a", count: 1_000)
+        let single = PromptComposer.excerpts([page(short)])
+        check(single == [short], "short page attaches whole")
+
+        let long = String(repeating: "b", count: 12_000)
+        let capped = PromptComposer.excerpts([page(long)])
+        check(capped.first?.count == 4_000, "single page capped per page")
+
+        let two = PromptComposer.excerpts([page(long), page(long)])
+        check(two.allSatisfy { $0.count == 4_000 }, "two long pages fit budget exactly")
+
+        let tiny = String(repeating: "c", count: 50)
+        let many = PromptComposer.excerpts(Array(repeating: page(long), count: 8))
+        check(many.allSatisfy { $0.count >= 500 && $0.count <= 2_500 }, "oversized set shrinks proportionally")
+        check(PromptComposer.excerpts([page(tiny)]).first == tiny, "tiny page untouched")
     }
 
     private static func slashCommandExpansion() {

@@ -33,8 +33,17 @@ enum PromptComposer {
         if message.imageID > 0 {
             content = "[Image ID\(message.imageID)i]\n\(message.text)"
         }
-        for page in pages {
-            content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+        // Command-expanded messages attach excerpts (token economy); regular
+        // messages attach the full page text as before.
+        if message.viaCommand {
+            let excerpts = excerpts(pages)
+            for (page, excerpt) in zip(pages, excerpts) {
+                content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(excerpt)"
+            }
+        } else {
+            for page in pages {
+                content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(page.text)"
+            }
         }
         var includedPages = Set(pages.map(\.id))
         var includedPastes: Set<Int> = [message.pasteID]
@@ -61,6 +70,18 @@ enum PromptComposer {
             content += "\n\n[Instruction: \(instruction) — unless the user already asked something specific above]"
         }
         return content
+    }
+
+    // Digest economy: pages attach as leading excerpts under a shared
+    // budget; full text stays stored for mention re-inclusion.
+    static func excerpts(_ pages: [FetchedPage], perPage: Int = 4_000, budget: Int = 20_000, minimum: Int = 500) -> [String] {
+        var texts = pages.filter { $0.error == nil }.map { String($0.text.prefix(perPage)) }
+        let total = texts.reduce(0) { $0 + $1.count }
+        if total > budget, total > 0 {
+            let scale = Double(budget) / Double(total)
+            texts = texts.map { String($0.prefix(max(minimum, Int(Double($0.count) * scale)))) }
+        }
+        return texts
     }
 
     // K=1 transcript: every user message plus only the most recent

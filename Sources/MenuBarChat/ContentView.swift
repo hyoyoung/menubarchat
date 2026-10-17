@@ -85,7 +85,9 @@ struct ContentView: View {
                                         ProgressView()
                                             .controlSize(.small)
                                         if chat.isFetchingPage {
-                                            Text("페이지 가져오는 중…")
+                                            Text(chat.fetchingPageCount > 1
+                                                 ? "페이지 \(chat.fetchingPageCount)개 가져오는 중…"
+                                                 : "페이지 가져오는 중…")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }
