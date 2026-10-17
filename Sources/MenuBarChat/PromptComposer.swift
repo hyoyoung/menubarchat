@@ -16,13 +16,13 @@ enum PromptComposer {
         guard isLast else {
             var content = message.text
             if message.pasteID > 0 {
-                content = "[Text ID\(message.pasteID)p (\(firstLine(of: message.text))) — mention \"ID\(message.pasteID)p\" to re-include]"
+                content = "[Text ID\(message.pasteID)p (\(firstLine(of: message.text)))]"
             }
             for page in pages {
-                content += "\n\n[Page ID\(page.id) (\(page.host)) — mention \"ID\(page.id)\" to re-include]"
+                content += "\n\n[Page ID\(page.id) (\(page.host))]"
             }
             if message.imageID > 0 {
-                content += "\n\n[Image ID\(message.imageID)i — mention \"ID\(message.imageID)i\" to re-include]"
+                content += "\n\n[Image ID\(message.imageID)i]"
             }
             return content
         }

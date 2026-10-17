@@ -68,7 +68,7 @@ enum SelfTest {
     private static func nonLastPasteBecomesStub() {
         let first = pasteMessage(longPaste, id: 1)
         let content = content(first, messages: [first, Message(role: .assistant, text: "ok"), Message(role: .user, text: "next")], isLast: false)
-        check(content.contains("[Text ID1p (line 1) — mention \"ID1p\" to re-include]"), "non-last paste -> stub")
+        check(content.contains("[Text ID1p (line 1)]"), "non-last paste -> stub")
         check(!content.contains("line 12"), "non-last paste hides full text")
     }
 
@@ -82,7 +82,7 @@ enum SelfTest {
     private static func nonLastPageBecomesStub() {
         let first = pageMessage("check this", pageID: 2)
         let content = content(first, messages: [first, Message(role: .assistant, text: "ok")], isLast: false)
-        check(content.contains("[Page ID2 (example.com) — mention \"ID2\" to re-include]"), "non-last page -> stub")
+        check(content.contains("[Page ID2 (example.com)]"), "non-last page -> stub")
         check(!content.contains("PAGE BODY"), "non-last page hides body")
     }
 
@@ -254,7 +254,7 @@ enum SelfTest {
         let messages = [earlier, Message(role: .assistant, text: "a cat"), last]
 
         let nonLast = PromptComposer.apiContent(messages: messages, urlHandling: "", for: earlier, isLast: false)
-        check(nonLast.contains(#"[Image ID2i — mention "ID2i" to re-include]"#), "image stub for past message")
+        check(nonLast.contains("[Image ID2i]"), "image stub for past message")
 
         check(PromptComposer.needsImageParts(messages: messages), "needs parts on image mention")
         let parts = PromptComposer.imageParts(messages: messages, urlHandling: "")
