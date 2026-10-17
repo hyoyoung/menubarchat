@@ -26,6 +26,7 @@ enum SelfTest {
         boldSurvivesStrikeStrip()
         imageEncoderResize()
         imagePathDetection()
+        transcriptWindowing()
         imageAttachmentComposition()
         await stripFirstExtraction()
         print(failures == 0 ? "selftest: all passed" : "selftest: \(failures) failure(s)")
@@ -209,6 +210,19 @@ enum SelfTest {
         check(ImageEncoder.imageFileURL(fromPathString: "hello world") == nil, "plain text ignored")
         check(ImageEncoder.imageFileURL(fromPathString: "/nonexistent/folder/cat.png") == nil, "missing file ignored")
         check(ImageEncoder.isImagePathString("/nonexistent/folder/cat.png"), "path shape without file still image-shaped")
+    }
+
+    private static func transcriptWindowing() {
+        let messages = [
+            Message(role: .user, text: "q1"),
+            Message(role: .assistant, text: "a1"),
+            Message(role: .user, text: "q2"),
+            Message(role: .assistant, text: "a2"),
+            Message(role: .user, text: "q3"),
+        ]
+        let transcript = PromptComposer.transcript(messages: messages, urlHandling: "")
+        check(transcript.map(\.role) == ["user", "user", "assistant", "user"], "only last assistant reply kept")
+        check(transcript.map(\.content) == ["q1", "q2", "a2", "q3"], "users kept in order")
     }
 
     private static func imageAttachmentComposition() {

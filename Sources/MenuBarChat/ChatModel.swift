@@ -244,14 +244,7 @@ final class ChatModel: ObservableObject {
     }
 
     private func stream() async {
-        let contents = messages.enumerated().map { index, message in
-            (role: message.role.rawValue, content: PromptComposer.apiContent(
-                messages: messages,
-                urlHandling: settings.urlHandling,
-                for: message,
-                isLast: index == messages.count - 1
-            ))
-        }
+        let contents = PromptComposer.transcript(messages: messages, urlHandling: settings.urlHandling)
         var lastParts: [[String: Any]]?
         if PromptComposer.needsImageParts(messages: messages) {
             lastParts = PromptComposer.imageParts(messages: messages, urlHandling: settings.urlHandling)

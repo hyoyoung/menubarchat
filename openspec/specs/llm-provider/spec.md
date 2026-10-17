@@ -9,8 +9,10 @@ Z.AI GLM API(OpenAI 호환)와의 HTTP 계약.
 ### Requirement: chat completions 요청
 `<baseURL>/chat/completions`로 `Authorization: Bearer <apiKey>`,
 `Content-Type: application/json`, 300초 타임아웃으로 POST하며, 본문은
-전체 대화를 담은 `{model, stream: true, thinking: {budget: <사고 수준>},
-messages: [{role, content}]}` JSON이다. 마지막 사용자 메시지에 이미지
+대화를 담은 `{model, stream: true, thinking: {budget: <사고 수준>},
+messages: [{role, content}]}` JSON이다. messages는 모든 사용자 메시지와
+**직전 어시스턴트 답변 1개만** 포함한다 — 더 오래된 어시스턴트 답변은
+전송에서 제외되며 스텁으로도 남기지 않는다. 마지막 사용자 메시지에 이미지
 첨부가 있으면 그 메시지의 content는
 `[{type: "text"}, {type: "image_url", image_url: {url: <Base64 Data URL>}}]`
 파트 배열이고, 나머지 메시지는 문자열 content를 유지한다. 웹 검색이
@@ -26,6 +28,11 @@ true, "search_result": true}}]`를 함께 보낸다. 기본 구성(저장된 설
 - **WHEN** 마지막 메시지에 이미지 첨부가 있으면
 - **THEN** 그 메시지의 content는 텍스트 파트와 이미지 파트의 배열로
   전송된다
+
+#### Scenario: 오래된 답변 제외
+- **WHEN** 어시스턴트 답변이 2개 이상 쌓인 대화에서 요청을 보내면
+- **THEN** 직전 답변 1개만 messages에 포함되고 나머지 답변은 전송되지
+  않는다
 
 ### Requirement: 사고(thinking) 예산
 설정의 사고 수준(`low`/`medium`/`high`/`max`)을 `{"budget": <수준>}`으로

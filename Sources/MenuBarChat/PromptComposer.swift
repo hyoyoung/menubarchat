@@ -63,6 +63,27 @@ enum PromptComposer {
         return content
     }
 
+    // K=1 transcript: every user message plus only the most recent
+    // assistant reply — older replies are excluded outright (user's choice:
+    // maximum token savings, accepted loss of older-reply recall).
+    static func transcript(messages: [Message], urlHandling: String) -> [(role: String, content: String)] {
+        let lastAssistantIndex = messages.lastIndex(where: { $0.role == .assistant })
+        return messages.enumerated().compactMap { index, message in
+            if message.role == .assistant, index != lastAssistantIndex {
+                return nil
+            }
+            return (
+                role: message.role.rawValue,
+                content: apiContent(
+                    messages: messages,
+                    urlHandling: urlHandling,
+                    for: message,
+                    isLast: index == messages.count - 1
+                )
+            )
+        }
+    }
+
     static func needsImageParts(messages: [Message]) -> Bool {
         guard let last = messages.last, last.role == .user else { return false }
         if last.imageData != nil { return true }
