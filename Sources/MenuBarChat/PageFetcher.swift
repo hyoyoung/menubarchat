@@ -180,16 +180,29 @@ enum PageFetcher {
     // Strip-first: the tag strip is effectively instant and good enough for
     // normal pages; only thin results (JS shells) pay the WebKit importer,
     // which can stall its caller and therefore runs behind a short cap.
+    // Real-content view of a stripped page: collapse runs of spaces and drop
+    // fragments with no letters/digits, so nav chrome (pipes, spacing, bare
+    // markup leftovers) collapses to almost nothing while prose survives.
+    static func cleanedText(_ text: String) -> String {
+        text.split(whereSeparator: \.isNewline)
+            .map { $0.split(separator: " ").joined(separator: " ") }
+            .filter { $0.contains(where: { $0.isLetter || $0.isNumber }) }
+            .joined(separator: "\n")
+    }
+
     static func isSufficientText(_ text: String) -> Bool {
-        text.count >= 200
+        let total = text.filter { !$0.isWhitespace }.count
+        guard total > 0 else { return false }
+        let real = cleanedText(text).filter { !$0.isWhitespace }.count
+        return real >= 200 && Double(real) >= 0.5 * Double(total)
     }
 
     static func resolvedText(stripped: String, runImporter: @escaping () async -> String?) async -> String {
-        if isSufficientText(stripped) { return stripped }
+        if isSufficientText(stripped) { return cleanedText(stripped) }
         if let converted = await runImporter(), isSufficientText(converted) {
-            return converted
+            return cleanedText(converted)
         }
-        return stripped
+        return cleanedText(stripped)
     }
 
     private static func plainText(fromHTML html: String) async -> String {

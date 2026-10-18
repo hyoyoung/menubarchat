@@ -192,6 +192,10 @@ enum SelfTest {
         check(await PageFetcher.resolvedText(stripped: "thin") { good } == good, "thin strip uses importer")
         check(await PageFetcher.resolvedText(stripped: "thin") { nil } == "thin", "importer failure keeps strip")
         check(!PageFetcher.isSufficientText("") && PageFetcher.isSufficientText(good), "sufficiency threshold")
+        let navSoup = String(repeating: "   |    |  \n", count: 40) + "NAVER 뉴스 홈"
+        check(!PageFetcher.isSufficientText(navSoup), "nav soup insufficient")
+        check(PageFetcher.isSufficientText(String(repeating: "real article text ", count: 30)), "real text sufficient")
+        check(PageFetcher.cleanedText("  |  |  \n  Hello   world  \n|||\n") == "Hello world", "cleanup drops symbol fragments")
     }
 
     private static func imageEncoderResize() {
