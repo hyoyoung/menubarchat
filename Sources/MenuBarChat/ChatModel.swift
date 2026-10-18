@@ -15,6 +15,7 @@ struct Message: Identifiable, Equatable {
     var pasteID = 0
     var isTextExpanded = false
     var viaCommand = false
+    var commandName: String?
     // Render-only caches (markdown parse, decoded thumbnail) — excluded
     // from equality; derived from the fields above.
     var cachedMarkdown: AttributedString?
@@ -37,6 +38,7 @@ struct Message: Identifiable, Equatable {
             && lhs.pasteID == rhs.pasteID
             && lhs.isTextExpanded == rhs.isTextExpanded
             && lhs.viaCommand == rhs.viaCommand
+            && lhs.commandName == rhs.commandName
     }
 }
 
@@ -53,6 +55,7 @@ final class ChatModel: ObservableObject {
     @Published var showsSettings = false
     @Published var queuedMessage: String?
     private var queuedViaCommand = false
+    private var queuedCommandName: String?
     @Published var stagedPaste: String?
     @Published var stagedImage: Data?
     @Published var pasteNotice: String?
@@ -69,10 +72,12 @@ final class ChatModel: ObservableObject {
     func send() {
         var prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         var viaCommand = false
-        if let expanded = SlashCommands.expand(prompt, commands: settings.commands) {
-            prompt = expanded
+        var commandName: String?
+        if let command = SlashCommands.matchedCommand(in: prompt, commands: settings.commands) {
+            prompt = SlashCommands.expand(prompt, commands: settings.commands) ?? prompt
             draft = ""
             viaCommand = true
+            commandName = command.name
         }
         if let staged = stagedPaste {
             stagedPaste = nil
@@ -99,6 +104,7 @@ final class ChatModel: ObservableObject {
             if stagedImage == nil, queuedMessage == nil {
                 queuedMessage = prompt
                 queuedViaCommand = viaCommand
+                queuedCommandName = commandName
                 draft = ""
             }
             return
@@ -108,7 +114,7 @@ final class ChatModel: ObservableObject {
             return
         }
         draft = ""
-        sendNow(prompt, viaCommand: viaCommand)
+        sendNow(prompt, viaCommand: viaCommand, commandName: commandName)
     }
 
     private var hasAPIKey: Bool {
@@ -193,7 +199,7 @@ final class ChatModel: ObservableObject {
         }
     }
 
-    private func sendNow(_ prompt: String, viaCommand: Bool = false) {
+    private func sendNow(_ prompt: String, viaCommand: Bool = false, commandName: String? = nil) {
         guard hasAPIKey else {
             showEmptyKeyHint()
             return
@@ -202,6 +208,7 @@ final class ChatModel: ObservableObject {
         messages.append(Message(role: .user, text: prompt))
         if let index = messages.indices.last, viaCommand {
             messages[index].viaCommand = true
+            messages[index].commandName = commandName
         }
         if let index = messages.indices.last, let staged = stagedImage {
             stagedImage = nil
@@ -225,8 +232,10 @@ final class ChatModel: ObservableObject {
             if let queued = queuedMessage {
                 queuedMessage = nil
                 let wasCommand = queuedViaCommand
+                let wasCommandName = queuedCommandName
                 queuedViaCommand = false
-                sendNow(queued, viaCommand: wasCommand)
+                queuedCommandName = nil
+                sendNow(queued, viaCommand: wasCommand, commandName: wasCommandName)
             }
         }
     }

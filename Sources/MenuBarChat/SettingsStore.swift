@@ -10,12 +10,17 @@ struct SlashCommand: Codable, Equatable, Identifiable {
 enum SlashCommands {
     // Expansion is exact-match on the first draft token; prefix matching is
     // reserved for the autocomplete dropdown.
-    static func expand(_ draft: String, commands: [SlashCommand]) -> String? {
+    static func matchedCommand(in draft: String, commands: [SlashCommand]) -> SlashCommand? {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.hasPrefix("/") else { return nil }
         let token = trimmed.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true).first.map(String.init) ?? ""
-        guard let command = commands.first(where: { "/" + $0.name.trimmingCharacters(in: .whitespaces) == token })
-        else { return nil }
+        return commands.first { "/" + $0.name.trimmingCharacters(in: .whitespaces) == token }
+    }
+
+    static func expand(_ draft: String, commands: [SlashCommand]) -> String? {
+        guard let command = matchedCommand(in: draft, commands: commands) else { return nil }
+        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let token = trimmed.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true).first.map(String.init) ?? ""
         let rest = trimmed.dropFirst(token.count).trimmingCharacters(in: .whitespacesAndNewlines)
         return rest.isEmpty ? command.prompt : command.prompt + "\n" + rest
     }

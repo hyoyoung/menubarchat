@@ -18,6 +18,11 @@ enum PromptComposer {
             if message.pasteID > 0 {
                 content = "[Text ID\(message.pasteID)p (\(firstLine(of: message.text)))]"
             }
+            // An expanded command prompt rides only its own request; later
+            // requests see a stub so the instruction stops dominating.
+            if let name = message.commandName {
+                content = "[Command: /\(name)]"
+            }
             for page in pages {
                 content += "\n\n[Page ID\(page.id) (\(page.host))]"
             }

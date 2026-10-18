@@ -29,6 +29,7 @@ enum SelfTest {
         transcriptWindowing()
         pageExcerpts()
         slashCommandExpansion()
+        commandStubbing()
         mathConversion()
         imageAttachmentComposition()
         await stripFirstExtraction()
@@ -270,6 +271,21 @@ enum SelfTest {
             && (seeded.first?.prompt.contains("news.naver.com") ?? false), "seed prompt covers sources")
         check((seeded.first?.prompt.contains("Write the digest in \(SettingsStore.systemLanguageName)") ?? false)
             && (seeded.first?.prompt.hasPrefix("Summarize") ?? false), "seed prompt english with system language")
+    }
+
+    private static func commandStubbing() {
+        var old = Message(role: .user, text: "Summarize the content from these news sites: A B C D")
+        old.commandName = "news"
+        let followUp = Message(role: .user, text: "https://example.com")
+        let messages = [old, Message(role: .assistant, text: "digest"), followUp]
+        let stubbed = PromptComposer.apiContent(messages: messages, urlHandling: "", for: old, isLast: false)
+        check(stubbed.contains("[Command: /news]"), "old command message stubbed")
+        check(!stubbed.contains("Summarize the content"), "command prompt body dropped from later requests")
+
+        var fresh = Message(role: .user, text: "Summarize everything now")
+        fresh.commandName = "news"
+        let asLast = PromptComposer.apiContent(messages: [Message(role: .user, text: "q"), Message(role: .assistant, text: "a"), fresh], urlHandling: "", for: fresh, isLast: true)
+        check(asLast.contains("Summarize everything now"), "last command prompt kept full")
     }
 
     private static func mathConversion() {
