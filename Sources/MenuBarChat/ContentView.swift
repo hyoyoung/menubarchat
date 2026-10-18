@@ -90,6 +90,10 @@ struct ContentView: View {
                                                  : "페이지 가져오는 중…")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
+                                        } else {
+                                            Text("답변 생성 중…")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
                                         }
                                         Spacer(minLength: 0)
                                     }
