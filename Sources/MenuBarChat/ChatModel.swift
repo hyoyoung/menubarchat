@@ -76,6 +76,11 @@ final class ChatModel: ObservableObject {
         var viaCommand = false
         var commandName: String?
         if let command = SlashCommands.matchedCommand(in: prompt, commands: settings.availableCommands) {
+            if command.name == "previous-news" {
+                draft = ""
+                showPreviousNews()
+                return
+            }
             prompt = SlashCommands.expand(prompt, commands: settings.availableCommands) ?? prompt
             prompt = SlashCommands.applyingLanguage(prompt, language: settings.appLanguage)
             prompt = prompt.replacingOccurrences(of: "{previous}", with: NewsHistory.previousContext(entries: NewsHistory.load()))
@@ -344,6 +349,15 @@ final class ChatModel: ObservableObject {
             messages.append(Message(role: .assistant, text: "Error: \(error.localizedDescription)"))
             return false
         }
+    }
+
+    // Local recall of the newest saved digest — no request, no refetch.
+    private func showPreviousNews() {
+        guard !isStreaming else { return }
+        followsBottom = true
+        let text = NewsHistory.load().first?.text ?? "저장된 다이제스트가 없습니다."
+        messages.append(Message(role: .assistant, text: text))
+        finalizeLastAssistantMarkdown()
     }
 
     private func saveNewsHistoryIfNeeded() {

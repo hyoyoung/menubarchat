@@ -98,6 +98,8 @@ final class SettingsStore: ObservableObject {
             Write the digest in {language}.
             """
         ),
+        // Local command: intercepted in send(); the prompt is unused.
+        SlashCommand(name: "previous-news", prompt: ""),
     ]
 
     nonisolated static var systemLanguageName: String {
