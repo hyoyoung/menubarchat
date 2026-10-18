@@ -279,7 +279,8 @@ enum SelfTest {
         check((seeded.first?.prompt.contains("Write the digest in \(SettingsStore.systemLanguageName)") ?? false)
             && (seeded.first?.prompt.hasPrefix("Summarize") ?? false), "seed prompt english with system language")
         check((seeded.first?.prompt.contains("computer/IT (information technology)") ?? false)
-            && (seeded.first?.prompt.contains("2-3 more lines") ?? false), "seed prompt IT scope and detail lines")
+            && (seeded.first?.prompt.contains("trending IT stories, add 2-3 more lines") ?? false)
+            && (seeded.first?.prompt.contains("each as a single concise line") ?? false), "seed prompt IT detail and concise non-tech")
     }
 
     private static func commandStubbing() {

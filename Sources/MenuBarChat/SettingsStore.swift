@@ -75,9 +75,10 @@ final class SettingsStore: ObservableObject {
             https://edition.cnn.com/us \
             https://news.naver.com/ — \
             pick the top 15 computer/IT (information technology) news stories \
-            (title + one-line summary + source site) and add a separate section \
-            of important or unusual non-tech events. For major or trending \
-            stories, add 2-3 more lines of detail. \
+            (title + one-line summary + source site). For major or trending \
+            IT stories, add 2-3 more lines of detail. Then add a separate \
+            section of important or unusual non-tech events, each as a single \
+            concise line. \
             Write the digest in \(systemLanguageName).
             """
         ),
