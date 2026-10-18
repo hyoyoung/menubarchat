@@ -197,6 +197,16 @@ enum SelfTest {
         check(PageFetcher.isSufficientText(String(repeating: "real article text ", count: 30)), "real text sufficient")
         check(PageFetcher.cleanedText("  |  |  \n  Hello   world  \n|||\n") == "Hello world", "cleanup drops symbol fragments")
 
+        let now = Date()
+        let entries = [
+            NewsHistory.Entry(date: now, text: "newest"),
+            NewsHistory.Entry(date: now, text: "second"),
+            NewsHistory.Entry(date: now.addingTimeInterval(-25 * 3600), text: "expired")
+        ]
+        check(NewsHistory.trimmed(entries: entries, now: now).map(\.text) == ["newest", "second"], "expired entries dropped, order kept")
+        check(NewsHistory.trimmed(entries: (0..<7).map { NewsHistory.Entry(date: now, text: "e\($0)") }, now: now).count == 5, "ring capped at 5")
+        check(NewsHistory.previousContext(entries: []) == "none", "empty history injects none")
+        check(NewsHistory.previousContext(entries: entries.filter { $0.text != "expired" }).hasPrefix("newest"), "previous context newest first")
         let collapsed = MessageView.markdown("a\n\n\n\n\nb").description
         check(!collapsed.contains("\n\n\n"), "excess newlines collapsed")
         check(MessageView.markdown("a\n\nb").description.contains("\n\n"), "single blank line preserved")

@@ -78,6 +78,7 @@ final class ChatModel: ObservableObject {
         if let command = SlashCommands.matchedCommand(in: prompt, commands: settings.availableCommands) {
             prompt = SlashCommands.expand(prompt, commands: settings.availableCommands) ?? prompt
             prompt = SlashCommands.applyingLanguage(prompt, language: settings.appLanguage)
+            prompt = prompt.replacingOccurrences(of: "{previous}", with: NewsHistory.previousContext(entries: NewsHistory.load()))
             draft = ""
             viaCommand = true
             commandName = command.name
@@ -229,9 +230,12 @@ final class ChatModel: ObservableObject {
 
         streamTask = Task {
             await fetchPagesForLastUserMessage()
-            await stream()
+            let finished = await stream()
             isStreaming = false
             streamTask = nil
+            if finished {
+                saveNewsHistoryIfNeeded()
+            }
             if let queued = queuedMessage {
                 queuedMessage = nil
                 let wasCommand = queuedViaCommand
@@ -309,7 +313,7 @@ final class ChatModel: ObservableObject {
         }
     }
 
-    private func stream() async {
+    private func stream() async -> Bool {
         let instruction = SlashCommands.applyingLanguage(settings.urlHandling, language: settings.appLanguage)
         let contents = PromptComposer.transcript(messages: messages, urlHandling: instruction)
         var lastParts: [[String: Any]]?
@@ -330,13 +334,26 @@ final class ChatModel: ObservableObject {
                 appendToAssistant(delta)
             }
             finalizeLastAssistantMarkdown()
+            return true
         } catch {
-            if Task.isCancelled { return }
+            if Task.isCancelled { return false }
             if let last = messages.last, last.role == .assistant,
                 last.text.isEmpty, last.reasoning.isEmpty {
                 messages.removeLast()
             }
             messages.append(Message(role: .assistant, text: "Error: \(error.localizedDescription)"))
+            return false
+        }
+    }
+
+    private func saveNewsHistoryIfNeeded() {
+        guard let assistant = messages.last, assistant.role == .assistant,
+              let index = messages.firstIndex(where: { $0.id == assistant.id }),
+              index > messages.startIndex
+        else { return }
+        let preceding = messages[index - 1]
+        if preceding.viaCommand, preceding.commandName == "news" {
+            NewsHistory.append(assistant.text)
         }
     }
 

@@ -94,6 +94,8 @@ final class SettingsStore: ObservableObject {
             Follow with the top 15 important or unusual events outside \
             STEM, one line each — skip typical news without mentioning \
             exclusions. \
+            Below are previous digests; do not repeat stories already \
+            covered there: {previous} \
             Write the digest in {language}.
             """
         ),
