@@ -84,18 +84,15 @@ final class SettingsStore: ObservableObject {
         SlashCommand(
             name: "news",
             prompt: """
-            Summarize the content from these news sites: \
+            Summarize the news from these sites: \
             https://news.ycombinator.com/news \
             https://www.bbc.com/news \
             https://edition.cnn.com/us \
             https://news.naver.com/ — \
-            pick the top 15 computer, science, mathematics, and information \
-            technology news stories (title + one-line summary + source site); \
-            for major or trending stories in these fields, add 2-3 more lines \
-            of detail. \
-            Then add a separate section of important or unusual events outside \
-            these fields, each as a single concise line — skip routine \
-            accidents and other everyday incidents. \
+            pick the top 15 STEM stories (title + one-line summary + source); \
+            for major or trending ones, add 2-3 lines of detail. \
+            Follow with a section of important or unusual events outside \
+            STEM, one line each — skip typical news. \
             Write the digest in {language}.
             """
         ),

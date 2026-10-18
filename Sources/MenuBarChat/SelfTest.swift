@@ -280,9 +280,9 @@ enum SelfTest {
             && (seeded.first?.prompt.contains("news.naver.com") ?? false), "seed prompt covers sources")
         check((seeded.first?.prompt.contains("Write the digest in {language}") ?? false)
             && (seeded.first?.prompt.hasPrefix("Summarize") ?? false), "seed prompt english with language placeholder")
-        check((seeded.first?.prompt.contains("computer, science, mathematics, and information") ?? false)
-            && (seeded.first?.prompt.contains("for major or trending stories in these fields, add 2-3 more lines") ?? false)
-            && (seeded.first?.prompt.contains("skip routine accidents and other everyday incidents") ?? false), "seed prompt stem scope with accident skip")
+        check((seeded.first?.prompt.contains("top 15 STEM stories (title + one-line summary + source)") ?? false)
+            && (seeded.first?.prompt.contains("for major or trending ones, add 2-3 lines of detail") ?? false)
+            && (seeded.first?.prompt.contains("skip typical news") ?? false), "seed prompt concise STEM")
         let merged = SettingsStore.mergedCommands(
             builtin: [SlashCommand(name: "news", prompt: "builtin news")],
             user: [SlashCommand(name: "news", prompt: "custom news"), SlashCommand(name: "weather", prompt: "w")]
