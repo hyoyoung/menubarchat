@@ -278,6 +278,8 @@ enum SelfTest {
             && (seeded.first?.prompt.contains("news.naver.com") ?? false), "seed prompt covers sources")
         check((seeded.first?.prompt.contains("Write the digest in \(SettingsStore.systemLanguageName)") ?? false)
             && (seeded.first?.prompt.hasPrefix("Summarize") ?? false), "seed prompt english with system language")
+        check((seeded.first?.prompt.contains("computer/IT (information technology)") ?? false)
+            && (seeded.first?.prompt.contains("2-3 more lines") ?? false), "seed prompt IT scope and detail lines")
     }
 
     private static func commandStubbing() {
