@@ -91,9 +91,8 @@ final class SettingsStore: ObservableObject {
             https://news.naver.com/ — \
             pick the top 15 STEM stories (title + one-line summary + source); \
             for major or trending ones, add 2-3 lines of detail. \
-            Follow with the top 15 important or unusual events outside \
-            STEM, one line each — skip typical news without mentioning \
-            exclusions. \
+            Follow with the top 15 general news stories, one line each — \
+            skip typical news without mentioning exclusions. \
             Below are previous digests; do not repeat stories already \
             covered there: {previous} \
             Write the digest in {language}.
