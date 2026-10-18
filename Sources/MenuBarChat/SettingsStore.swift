@@ -93,8 +93,9 @@ final class SettingsStore: ObservableObject {
             for major or trending ones, add 2-3 lines of detail. \
             Follow with the top 15 general news stories, one line each — \
             skip typical news without mentioning exclusions. \
-            Below are previous digests; do not repeat stories already \
-            covered there: {previous} \
+            Below are previous digests; keep already-covered STEM stories \
+            unless minor, and skip already-covered general news unless it \
+            is a major development: {previous} \
             Write the digest in {language}.
             """
         ),
