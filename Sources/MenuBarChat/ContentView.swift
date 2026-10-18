@@ -503,7 +503,9 @@ struct MessageView: View, Equatable {
         if let index = chat.messages.firstIndex(where: { $0.id == message.id }),
            let userIndex = chat.messages[..<index].lastIndex(where: { $0.role == .user }) {
             let userMessage = chat.messages[userIndex]
-            if let page = userMessage.pages.first(where: { $0.error == nil }), page.id > 0 {
+            if userMessage.viaCommand, userMessage.pageBundleID > 0 {
+                suffix = ", ID\(userMessage.pageBundleID)"
+            } else if let page = userMessage.pages.first(where: { $0.error == nil }), page.id > 0 {
                 suffix = ", ID\(page.id)"
             } else if userMessage.pasteID > 0 {
                 suffix = ", ID\(userMessage.pasteID)p"
@@ -647,12 +649,44 @@ struct MessageView: View, Equatable {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-                ForEach(message.pages, id: \.host) { page in
-                    PagePreview(page: page)
+                if message.viaCommand, !message.pages.isEmpty {
+                    SourceListCard(bundleID: message.pageBundleID, pages: message.pages)
+                } else {
+                    ForEach(message.pages, id: \.host) { page in
+                        PagePreview(page: page)
+                    }
                 }
             }
             if message.role == .assistant { Spacer(minLength: 48) }
         }
+    }
+}
+
+struct SourceListCard: View {
+    let bundleID: Int
+    let pages: [FetchedPage]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("ID\(bundleID) · \(pages.count) sources")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            ForEach(pages, id: \.host) { page in
+                if let error = page.error {
+                    Text("\(page.host) — \(error)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(page.host)
+                        .font(.caption)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 

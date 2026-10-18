@@ -286,6 +286,18 @@ enum SelfTest {
         fresh.commandName = "news"
         let asLast = PromptComposer.apiContent(messages: [Message(role: .user, text: "q"), Message(role: .assistant, text: "a"), fresh], urlHandling: "", for: fresh, isLast: true)
         check(asLast.contains("Summarize everything now"), "last command prompt kept full")
+
+        var bundle = Message(role: .user, text: "x")
+        bundle.viaCommand = true
+        bundle.commandName = "news"
+        bundle.pageBundleID = 5
+        bundle.pages = [FetchedPage(id: 0, host: "a.com", text: "A", imageURL: nil, error: nil)]
+        let bundleStub = PromptComposer.apiContent(messages: [bundle, Message(role: .assistant, text: "r"), Message(role: .user, text: "next")], urlHandling: "", for: bundle, isLast: false)
+        check(bundleStub.contains("[Command: /news]\n\n[Sources ID5]"), "bundle stub single line")
+        check(!bundleStub.contains("[Page"), "no per-page stubs for command messages")
+
+        let bundleLast = PromptComposer.apiContent(messages: [bundle, Message(role: .assistant, text: "r"), Message(role: .user, text: "next")], urlHandling: "", for: bundle, isLast: true)
+        check(bundleLast.contains("[Source — a.com]"), "last command sources labeled by host")
     }
 
     private static func mathConversion() {

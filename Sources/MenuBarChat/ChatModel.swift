@@ -16,6 +16,7 @@ struct Message: Identifiable, Equatable {
     var isTextExpanded = false
     var viaCommand = false
     var commandName: String?
+    var pageBundleID = 0
     // Render-only caches (markdown parse, decoded thumbnail) — excluded
     // from equality; derived from the fields above.
     var cachedMarkdown: AttributedString?
@@ -39,6 +40,7 @@ struct Message: Identifiable, Equatable {
             && lhs.isTextExpanded == rhs.isTextExpanded
             && lhs.viaCommand == rhs.viaCommand
             && lhs.commandName == rhs.commandName
+            && lhs.pageBundleID == rhs.pageBundleID
     }
 }
 
@@ -268,6 +270,11 @@ final class ChatModel: ObservableObject {
         // Only command-expanded messages fetch every URL (cap 10); regular
         // messages keep the single-first-URL behavior.
         let targets = messages[index].viaCommand ? Array(all.prefix(10)) : [all[0]]
+        // Command messages carry one bundle ID for all pages; pages stay 0.
+        if messages[index].viaCommand, messages[index].pageBundleID == 0 {
+            messages[index].pageBundleID = nextAttachmentID
+            nextAttachmentID += 1
+        }
         if Task.isCancelled { return }
         isFetchingPage = true
         fetchingPageCount = targets.count
@@ -291,7 +298,7 @@ final class ChatModel: ObservableObject {
                 guard messages.indices.contains(index), messages[index].role == .user
                 else { group.cancelAll(); return }
                 var page = fetched
-                if page.error == nil {
+                if page.error == nil, !messages[index].viaCommand {
                     page.id = nextAttachmentID
                     nextAttachmentID += 1
                 }

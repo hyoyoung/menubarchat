@@ -23,8 +23,14 @@ enum PromptComposer {
             if let name = message.commandName {
                 content = "[Command: /\(name)]"
             }
-            for page in pages {
-                content += "\n\n[Page ID\(page.id) (\(page.host))]"
+            if message.viaCommand {
+                if message.pageBundleID > 0 {
+                    content += "\n\n[Sources ID\(message.pageBundleID)]"
+                }
+            } else {
+                for page in pages {
+                    content += "\n\n[Page ID\(page.id) (\(page.host))]"
+                }
             }
             if message.imageID > 0 {
                 content += "\n\n[Image ID\(message.imageID)i]"
@@ -39,11 +45,12 @@ enum PromptComposer {
             content = "[Image ID\(message.imageID)i]\n\(message.text)"
         }
         // Command-expanded messages attach excerpts (token economy); regular
-        // messages attach the full page text as before.
+        // messages attach the full page text as before. Command pages carry
+        // no per-page IDs, so bundle sources are labeled by host only.
         if message.viaCommand {
             let excerpts = excerpts(pages)
             for (page, excerpt) in zip(pages, excerpts) {
-                content += "\n\n[Page ID\(page.id) — \(page.host)]\n\(excerpt)"
+                content += "\n\n[Source — \(page.host)]\n\(excerpt)"
             }
         } else {
             for page in pages {
