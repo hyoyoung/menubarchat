@@ -77,6 +77,7 @@ final class ChatModel: ObservableObject {
         var commandName: String?
         if let command = SlashCommands.matchedCommand(in: prompt, commands: settings.commands) {
             prompt = SlashCommands.expand(prompt, commands: settings.commands) ?? prompt
+            prompt = SlashCommands.applyingLanguage(prompt, language: settings.appLanguage)
             draft = ""
             viaCommand = true
             commandName = command.name
@@ -309,10 +310,11 @@ final class ChatModel: ObservableObject {
     }
 
     private func stream() async {
-        let contents = PromptComposer.transcript(messages: messages, urlHandling: settings.urlHandling)
+        let instruction = SlashCommands.applyingLanguage(settings.urlHandling, language: settings.appLanguage)
+        let contents = PromptComposer.transcript(messages: messages, urlHandling: instruction)
         var lastParts: [[String: Any]]?
         if PromptComposer.needsImageParts(messages: messages) {
-            lastParts = PromptComposer.imageParts(messages: messages, urlHandling: settings.urlHandling)
+            lastParts = PromptComposer.imageParts(messages: messages, urlHandling: instruction)
         }
         do {
             let deltas = LLMClient.stream(

@@ -8,6 +8,9 @@ struct SlashCommand: Codable, Equatable, Identifiable {
 }
 
 enum SlashCommands {
+    static func applyingLanguage(_ text: String, language: String) -> String {
+        text.replacingOccurrences(of: "{language}", with: language)
+    }
     // Expansion is exact-match on the first draft token; prefix matching is
     // reserved for the autocomplete dropdown.
     static func matchedCommand(in draft: String, commands: [SlashCommand]) -> SlashCommand? {
@@ -41,6 +44,7 @@ final class SettingsStore: ObservableObject {
     @Published var thinkingBudget: String { didSet { UserDefaults.standard.set(thinkingBudget, forKey: "thinkingBudget") } }
     @Published var webSearch: Bool { didSet { UserDefaults.standard.set(webSearch, forKey: "webSearch") } }
     @Published var urlHandling: String { didSet { UserDefaults.standard.set(urlHandling, forKey: "urlHandling") } }
+    @Published var appLanguage: String { didSet { UserDefaults.standard.set(appLanguage, forKey: "appLanguage") } }
     @Published var commands: [SlashCommand] {
         didSet { UserDefaults.standard.set(try? JSONEncoder().encode(commands), forKey: "commands") }
     }
@@ -54,8 +58,8 @@ final class SettingsStore: ObservableObject {
         model = defaults.string(forKey: "model") ?? "glm-5.3-flash"
         thinkingBudget = defaults.string(forKey: "thinkingBudget") ?? "high"
         webSearch = (defaults.object(forKey: "webSearch") as? Bool) ?? false
-        urlHandling = defaults.string(forKey: "urlHandling")
-            ?? "summarize it in \(Self.systemLanguageName)"
+        urlHandling = defaults.string(forKey: "urlHandling") ?? "summarize it in {language}"
+        appLanguage = defaults.string(forKey: "appLanguage") ?? Self.systemLanguageName
         if let data = defaults.data(forKey: "commands"),
            let saved = try? JSONDecoder().decode([SlashCommand].self, from: data) {
             commands = saved
@@ -79,7 +83,7 @@ final class SettingsStore: ObservableObject {
             IT stories, add 2-3 more lines of detail. Then add a separate \
             section of important or unusual non-tech events, each as a single \
             concise line. \
-            Write the digest in \(systemLanguageName).
+            Write the digest in {language}.
             """
         ),
     ]

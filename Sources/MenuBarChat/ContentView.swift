@@ -349,6 +349,14 @@ struct SettingsView: View {
 
     private let modelPresets = ["glm-5.3-flash", "glm-5.3", "glm-4.6"]
     private let thinkingBudgets = ["low", "medium", "high", "max"]
+    private let languagePresets = ["Korean", "English", "Japanese", "Chinese", "Spanish"]
+
+    private var languageSelection: Binding<String> {
+        Binding(
+            get: { languagePresets.contains(settings.appLanguage) ? settings.appLanguage : "" },
+            set: { settings.appLanguage = $0 }
+        )
+    }
 
     private var modelSelection: Binding<String> {
         Binding(
@@ -394,6 +402,19 @@ struct SettingsView: View {
             HStack {
                 Text("URL handling")
                 TextField("http/https default handling", text: $settings.urlHandling)
+            }
+            HStack {
+                Text("Language")
+                Spacer()
+                Picker("", selection: languageSelection) {
+                    ForEach(languagePresets, id: \.self) { Text($0) }
+                    Text("Custom…").tag("")
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+            }
+            if languageSelection.wrappedValue.isEmpty {
+                TextField("Language name", text: $settings.appLanguage)
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text("Commands")
