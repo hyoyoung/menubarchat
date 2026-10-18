@@ -2,8 +2,9 @@
 
 - [ ] 1.1 시드 프롬프트 교체: "top 15 computer, science, mathematics, and
   information technology news stories", 심화 줄 "For major or trending
-  stories", 비주요 섹션 "events outside these fields" + SelfTest 기대값
-  갱신 — selftest 통과로 확인
+  stories", 비주요 섹션 "events outside these fields — skip routine
+  accidents and other everyday incidents" + SelfTest 기대값 갱신 —
+  selftest 통과로 확인
 
 ## 2. 검증
 

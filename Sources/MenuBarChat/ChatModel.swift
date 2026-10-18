@@ -75,8 +75,8 @@ final class ChatModel: ObservableObject {
         var prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         var viaCommand = false
         var commandName: String?
-        if let command = SlashCommands.matchedCommand(in: prompt, commands: settings.commands) {
-            prompt = SlashCommands.expand(prompt, commands: settings.commands) ?? prompt
+        if let command = SlashCommands.matchedCommand(in: prompt, commands: settings.availableCommands) {
+            prompt = SlashCommands.expand(prompt, commands: settings.availableCommands) ?? prompt
             prompt = SlashCommands.applyingLanguage(prompt, language: settings.appLanguage)
             draft = ""
             viaCommand = true

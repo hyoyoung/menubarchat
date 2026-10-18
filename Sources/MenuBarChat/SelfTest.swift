@@ -274,7 +274,7 @@ enum SelfTest {
         check(SlashCommands.completions(for: "/news extra", commands: commands).isEmpty, "no completion with args")
         check(SlashCommands.applyingLanguage("digest in {language}", language: "Japanese") == "digest in Japanese", "language placeholder substitution")
         check(SlashCommands.applyingLanguage("no placeholder", language: "Japanese") == "no placeholder", "plain text untouched by substitution")
-        let seeded = SettingsStore.defaultCommands
+        let seeded = SettingsStore.builtinCommands
         check(seeded.first?.name == "news", "news command seeded")
         check((seeded.first?.prompt.contains("news.ycombinator.com") ?? false)
             && (seeded.first?.prompt.contains("news.naver.com") ?? false), "seed prompt covers sources")
@@ -283,6 +283,12 @@ enum SelfTest {
         check((seeded.first?.prompt.contains("computer/IT (information technology)") ?? false)
             && (seeded.first?.prompt.contains("trending IT stories, add 2-3 more lines") ?? false)
             && (seeded.first?.prompt.contains("each as a single concise line") ?? false), "seed prompt IT detail and concise non-tech")
+        let merged = SettingsStore.mergedCommands(
+            builtin: [SlashCommand(name: "news", prompt: "builtin news")],
+            user: [SlashCommand(name: "news", prompt: "custom news"), SlashCommand(name: "weather", prompt: "w")]
+        )
+        check(merged.map(\.name) == ["news", "weather"], "builtin wins name clash, user command kept")
+        check(merged.first?.prompt == "builtin news", "clashed user command shadowed")
     }
 
     private static func commandStubbing() {

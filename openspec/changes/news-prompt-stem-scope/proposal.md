@@ -11,7 +11,9 @@
 - 시드 `news` 프롬프트: "top 15 computer, science, mathematics, and
   information technology news stories"로 범위화. 심화 줄은 "For major or
   trending stories"(분야 한정 부사 제거 — 문맥이 이미 범위 안),
-  비주요 섹션은 "events outside these fields"로 재구성.
+  비주요 섹션은 "events outside these fields"로 재구성하고 일상 사건
+  제외는 "skip routine accidents and other everyday incidents" 한 문장으로
+  지시(간결 우선 — 문제 발생 시 다음 반복에서 보강).
 
 ## Capabilities
 

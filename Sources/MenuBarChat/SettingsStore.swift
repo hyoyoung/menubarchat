@@ -64,12 +64,23 @@ final class SettingsStore: ObservableObject {
            let saved = try? JSONDecoder().decode([SlashCommand].self, from: data) {
             commands = saved
         } else {
-            commands = Self.defaultCommands
+            commands = []
         }
     }
 
-    // Seeded only when nothing is stored yet; user edits and deletions win.
-    nonisolated static let defaultCommands = [
+    // User commands join the built-ins; on a name clash the builtin wins.
+    nonisolated static func mergedCommands(builtin: [SlashCommand], user: [SlashCommand]) -> [SlashCommand] {
+        let builtinNames = Set(builtin.map { $0.name.trimmingCharacters(in: .whitespaces) })
+        return builtin + user.filter { !builtinNames.contains($0.name.trimmingCharacters(in: .whitespaces)) }
+    }
+
+    var availableCommands: [SlashCommand] {
+        Self.mergedCommands(builtin: Self.builtinCommands, user: commands)
+    }
+
+    // Built-in commands live in code only (never stored), so app updates
+    // always take effect — stored copies of the same name are shadowed.
+    nonisolated static let builtinCommands = [
         SlashCommand(
             name: "news",
             prompt: """

@@ -289,7 +289,7 @@ struct ContentView: View {
                     .lineLimit(1...5)
                     .focused($focused)
                     .onKeyPress(.tab, phases: .down) { _ in
-                        guard let first = SlashCommands.completions(for: chat.draft, commands: settings.commands).first
+                        guard let first = SlashCommands.completions(for: chat.draft, commands: settings.availableCommands).first
                         else { return .ignored }
                         chat.applyCommand(first)
                         return .handled
@@ -326,7 +326,7 @@ struct ContentView: View {
                     && chat.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             .overlay(alignment: .top) {
-                let completions = SlashCommands.completions(for: chat.draft, commands: settings.commands)
+                let completions = SlashCommands.completions(for: chat.draft, commands: settings.availableCommands)
                 if !completions.isEmpty, !chat.showsSettings {
                     VStack(alignment: .leading, spacing: 2) {
                         ForEach(completions) { command in
@@ -432,6 +432,25 @@ struct SettingsView: View {
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text("Commands")
+                ForEach(SettingsStore.builtinCommands) { command in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) {
+                            Text("/" + command.name)
+                                .font(.callout.monospaced())
+                            Text("Built-in")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color(nsColor: .quaternaryLabelColor), in: Capsule())
+                            Spacer()
+                        }
+                        Text(command.prompt)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                    }
+                }
                 ForEach($settings.commands) { $command in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
