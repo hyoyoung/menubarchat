@@ -196,6 +196,9 @@ enum SelfTest {
         check(!PageFetcher.isSufficientText(navSoup), "nav soup insufficient")
         check(PageFetcher.isSufficientText(String(repeating: "real article text ", count: 30)), "real text sufficient")
         check(PageFetcher.cleanedText("  |  |  \n  Hello   world  \n|||\n") == "Hello world", "cleanup drops symbol fragments")
+        let giantStyle = "<style>" + String(repeating: ".a{color:red}", count: 60_000) + "</style><p>" + String(repeating: "real body text ", count: 40) + "</p>"
+        let strippedGiant = PageFetcher.strippedText(fromHTML: giantStyle)
+        check(!strippedGiant.contains("color:red") && strippedGiant.contains("real body text"), "length cut never leaks style blocks")
     }
 
     private static func imageEncoderResize() {

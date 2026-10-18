@@ -1,0 +1,23 @@
+# Spec Delta
+
+## MODIFIED Requirements
+
+### Requirement: 영속화
+편집 즉시 `apiKey`, `baseURL`, `model`, `thinkingBudget`, `webSearch`,
+`urlHandling`, 커스텀 명령 목록을 UserDefaults에 저장하고 실행 시
+불러온다. 기본값: base URL `https://api.z.ai/api/coding/paas/v4`, 모델
+`glm-5.3-flash`, 사고 수준 `high`, 웹 검색 끔, URL 지시문 `summarize it in <시스템 기본 언어>`, API
+키는 환경변수 `ZAI_API_KEY`(그 다음 `Z_AI_API_KEY`). 명령 목록의 기본값은
+`news` 다이제스트 명령 1개(영어 템플릿: 4개 뉴스 사이트 URL 종합,
+컴퓨터·IT 뉴스 상위 15개 + 비테크 주요·이색 사항, 주요·화제 뉴스는
+2~3줄 심화 요약, 출력은 시스템 기본 언어로 지시)이며, 저장된 목록이
+있으면 그것을 쓰고 사용자가 지운 명령은 다시 생기지 않는다.
+
+#### Scenario: 재시작 후 설정 유지
+- **WHEN** 설정 필드를 편집한 뒤 앱을 재시작하면
+- **THEN** 편집한 값이 유지되어 그대로 적용된다
+
+#### Scenario: 기본 명령 제공
+- **WHEN** 처음 실행하면
+- **THEN** 영어 템플릿에 시스템 기본 언어 출력 지시를 담은 `news`
+  명령이 등록되어 있다

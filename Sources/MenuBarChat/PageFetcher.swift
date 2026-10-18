@@ -1,4 +1,5 @@
 import AppKit
+import WebKit
 
 struct FetchedPage: Equatable {
     var id = 0
@@ -35,7 +36,7 @@ enum PageFetcher {
                 return FetchedPage(host: host, text: "", imageURL: nil, error: "HTTP \(http.statusCode)")
             }
             let html = String(data: data, encoding: .utf8) ?? ""
-            let text = await Self.plainText(fromHTML: html)
+            let text = await Self.plainText(fromHTML: html, url: url)
             guard !text.isEmpty else {
                 return FetchedPage(host: host, text: "", imageURL: nil, error: "no content")
             }
@@ -205,33 +206,11 @@ enum PageFetcher {
         return cleanedText(stripped)
     }
 
-    private static func plainText(fromHTML html: String) async -> String {
-        let source = String(html.prefix(500_000))
-        let stripped = stripTags(source)
-        return await resolvedText(stripped: stripped) {
-            let importer = Task.detached(priority: .userInitiated) { () -> String in
-                (NSAttributedString(
-                    html: Data(source.utf8),
-                    options: [.documentType: NSAttributedString.DocumentType.html],
-                    documentAttributes: nil
-                )?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-            let converted: String? = await withTaskGroup(of: String?.self) { group in
-                group.addTask { await importer.value }
-                group.addTask {
-                    try? await Task.sleep(nanoseconds: 2_000_000_000)
-                    return nil
-                }
-                let first = await group.next() ?? nil
-                group.cancelAll()
-                importer.cancel()
-                return first
-            }
-            return converted
-        }
-    }
-
-    private static func stripTags(_ html: String) -> String {
+    // Two-phase strip: block removal must see the full document — a length
+    // cut inside a giant <style> orphans the closing tag and leaks CSS into
+    // the "content" (observed with 4.8MB CNN pages). Only the remaining
+    // text is length-capped afterwards.
+    static func strippedText(fromHTML html: String) -> String {
         var text = html
         for tag in ["script", "style", "head"] {
             while let open = text.range(of: "<\(tag)"),
@@ -239,9 +218,50 @@ enum PageFetcher {
                 text.removeSubrange(open.lowerBound..<close.upperBound)
             }
         }
+        return scanTags(String(text.prefix(500_000)))
+    }
+
+    private static func plainText(fromHTML html: String, url: URL) async -> String {
+        let stripped = strippedText(fromHTML: html)
+        return await resolvedText(stripped: stripped, runImporter: {
+            await withTaskGroup(of: String?.self) { group in
+                group.addTask { await renderInnerText(of: url) }
+                group.addTask {
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    return nil
+                }
+                let first = await group.next() ?? nil
+                group.cancelAll()
+                return first
+            }
+        })
+    }
+
+    // JS-executing fallback for React-style shells: a real WKWebView load,
+    // polled for rendered body text. The caller's 3s race bounds the wait.
+    @MainActor
+    private static func renderInnerText(of url: URL) async -> String? {
+        let webView = WKWebView()
+        webView.load(URLRequest(url: url))
+        for _ in 0..<50 {
+            if Task.isCancelled { return nil }
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            let text: String? = await withCheckedContinuation { continuation in
+                webView.evaluateJavaScript("document.body.innerText", completionHandler: { result, _ in
+                    continuation.resume(returning: result as? String)
+                })
+            }
+            if let text, text.filter({ !$0.isWhitespace }).count > 500 {
+                return text
+            }
+        }
+        return nil
+    }
+
+    private static func scanTags(_ html: String) -> String {
         var result = ""
         var inTag = false
-        for character in text {
+        for character in html {
             if character == "<" { inTag = true }
             else if character == ">" { inTag = false }
             else if !inTag { result.append(character) }
