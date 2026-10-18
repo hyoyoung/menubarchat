@@ -102,6 +102,7 @@ struct ContentView: View {
                                     .background(Color(nsColor: .controlBackgroundColor))
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                                     .padding(.trailing, 48)
+                                    .id("placeholder")
                                 }
                             }
                             .padding(14)
@@ -122,14 +123,23 @@ struct ContentView: View {
                         }
                     }
                     .onChange(of: chat.messages) { _, _ in
-                        if chat.followsBottom, let last = chat.messages.last {
+                        guard chat.followsBottom else { return }
+                        let placeholderVisible = chat.isStreaming
+                            && (chat.messages.last?.role != .assistant || (chat.messages.last?.text ?? "").isEmpty)
+                        if placeholderVisible {
+                            proxy.scrollTo("placeholder", anchor: .bottom)
+                        } else if let last = chat.messages.last {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
                     }
                     .overlay(alignment: .bottom) {
                         if !chat.followsBottom && !chat.messages.isEmpty {
                             Button {
-                                if let last = chat.messages.last {
+                                let placeholderVisible = chat.isStreaming
+                                    && (chat.messages.last?.role != .assistant || (chat.messages.last?.text ?? "").isEmpty)
+                                if placeholderVisible {
+                                    proxy.scrollTo("placeholder", anchor: .bottom)
+                                } else if let last = chat.messages.last {
                                     proxy.scrollTo(last.id, anchor: .bottom)
                                 }
                                 chat.followsBottom = true
