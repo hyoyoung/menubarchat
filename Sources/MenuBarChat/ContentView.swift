@@ -5,6 +5,16 @@ struct ContentView: View {
     @EnvironmentObject private var settings: SettingsStore
     @FocusState private var focused: Bool
 
+    private func scrollToBottom(proxy: ScrollViewProxy, chat: ChatModel) {
+        let placeholderVisible = chat.isStreaming
+            && (chat.messages.last?.role != .assistant || (chat.messages.last?.text ?? "").isEmpty)
+        if placeholderVisible {
+            proxy.scrollTo("placeholder", anchor: .bottom)
+        } else if let last = chat.messages.last {
+            proxy.scrollTo(last.id, anchor: .bottom)
+        }
+    }
+
     private func handleImageDrop(_ urls: [URL]) -> Bool {
         guard let url = urls.first,
               ImageEncoder.imageExtensions.contains(url.pathExtension.lowercased()),
@@ -115,7 +125,12 @@ struct ContentView: View {
                                         Color.clear
                                             .onChange(of: marker.frame(in: .global).minY) { _, markerY in
                                                 if markerY <= scrollGeometry.frame(in: .global).maxY + 40 {
-                                                    chat.followsBottom = true
+                                                    if !chat.followsBottom {
+                                                        chat.followsBottom = true
+                                                        // Absorb the tolerance gap so later per-delta
+                                                        // pins share the same anchor.
+                                                        scrollToBottom(proxy: proxy, chat: chat)
+                                                    }
                                                 }
                                             }
                                     }
@@ -123,25 +138,14 @@ struct ContentView: View {
                         }
                     }
                     .onChange(of: chat.messages) { _, _ in
-                        guard chat.followsBottom else { return }
-                        let placeholderVisible = chat.isStreaming
-                            && (chat.messages.last?.role != .assistant || (chat.messages.last?.text ?? "").isEmpty)
-                        if placeholderVisible {
-                            proxy.scrollTo("placeholder", anchor: .bottom)
-                        } else if let last = chat.messages.last {
-                            proxy.scrollTo(last.id, anchor: .bottom)
+                        if chat.followsBottom {
+                            scrollToBottom(proxy: proxy, chat: chat)
                         }
                     }
                     .overlay(alignment: .bottom) {
                         if !chat.followsBottom && !chat.messages.isEmpty {
                             Button {
-                                let placeholderVisible = chat.isStreaming
-                                    && (chat.messages.last?.role != .assistant || (chat.messages.last?.text ?? "").isEmpty)
-                                if placeholderVisible {
-                                    proxy.scrollTo("placeholder", anchor: .bottom)
-                                } else if let last = chat.messages.last {
-                                    proxy.scrollTo(last.id, anchor: .bottom)
-                                }
+                                scrollToBottom(proxy: proxy, chat: chat)
                                 chat.followsBottom = true
                             } label: {
                                 Image(systemName: "arrow.down")
