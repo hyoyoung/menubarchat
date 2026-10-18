@@ -590,7 +590,6 @@ struct MessageView: View, Equatable {
                         Text(displayedReasoning)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
                         if needsFold {
                             Button(foldLabel) {
                                 if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
@@ -638,7 +637,6 @@ struct MessageView: View, Equatable {
                             }
                             if message.isTextExpanded {
                                 Text(message.text)
-                                    .textSelection(.enabled)
                             }
                             Button("\(message.isTextExpanded ? "Less" : "More"), ID\(message.pasteID)p") {
                                 if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
@@ -651,10 +649,8 @@ struct MessageView: View, Equatable {
                             .buttonStyle(.plain)
                         } else if message.role == .assistant {
                             Text(message.cachedMarkdown ?? Self.markdown(message.text))
-                                .textSelection(.enabled)
                         } else {
                             Text(message.text)
-                                .textSelection(.enabled)
                         }
                         if message.role == .assistant {
                             HStack {
