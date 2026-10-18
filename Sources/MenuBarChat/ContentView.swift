@@ -655,7 +655,7 @@ struct MessageView: View, Equatable {
                             .foregroundStyle(.secondary)
                             .buttonStyle(.plain)
                         } else if message.role == .assistant {
-                            Text(message.cachedMarkdown ?? Self.markdown(message.text))
+                            SelectableTextView(attributed: message.cachedMarkdown ?? Self.markdown(message.text))
                         } else {
                             Text(message.text)
                         }
@@ -720,6 +720,48 @@ struct MessageView: View, Equatable {
             }
             if message.role == .assistant { Spacer(minLength: 48) }
         }
+    }
+}
+
+// AppKit-backed selectable text for assistant replies: native drag
+// selection and Cmd+C without SwiftUI Text's selection layout path
+// (which drops frames on long attributed strings).
+struct SelectableTextView: NSViewRepresentable {
+    let attributed: AttributedString
+
+    func makeNSView(context: Context) -> NSTextView {
+        let storage = NSTextStorage()
+        let container = NSTextContainer(
+            containerSize: CGSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+        )
+        container.widthTracksTextView = true
+        container.lineFragmentPadding = 0
+        let layoutManager = NSLayoutManager()
+        storage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(container)
+        let textView = NSTextView(frame: CGRect.zero, textContainer: container)
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.drawsBackground = false
+        textView.textContainerInset = NSSize.zero
+        textView.textColor = .labelColor
+        return textView
+    }
+
+    func updateNSView(_ textView: NSTextView, context: Context) {
+        textView.textStorage?.setAttributedString(NSAttributedString(attributed))
+        textView.textColor = .labelColor
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSTextView, context: Context) -> CGSize? {
+        guard let width = proposal.width, width > 0,
+              let container = nsView.textContainer,
+              let layoutManager = nsView.layoutManager
+        else { return nil }
+        container.size = CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+        layoutManager.glyphRange(for: container)
+        let used = layoutManager.usedRect(for: container)
+        return CGSize(width: width, height: ceil(used.height))
     }
 }
 
