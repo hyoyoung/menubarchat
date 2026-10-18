@@ -86,7 +86,7 @@ struct ContentView: View {
                                             .controlSize(.small)
                                         if chat.isFetchingPage {
                                             Text(chat.fetchingPageCount > 1
-                                                 ? "페이지 \(chat.fetchingPageCount)개 가져오는 중…"
+                                                 ? "페이지 \(min(chat.messages.last?.pages.count ?? 0, chat.fetchingPageCount))/\(chat.fetchingPageCount) 가져오는 중…"
                                                  : "페이지 가져오는 중…")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
