@@ -535,8 +535,15 @@ struct MessageView: View, Equatable {
             && lhs.hoveredMessageID == rhs.hoveredMessageID
     }
 
-    static func markdown(_ text: String) -> AttributedString {
-        let source = MathFormatter.unicodeMath(in: text)
+    nonisolated static func markdown(_ text: String) -> AttributedString {
+        var source = MathFormatter.unicodeMath(in: text)
+        // Collapse 3+ consecutive newlines to a single blank line.
+        if let regex = try? NSRegularExpression(pattern: #"\n{3,}"#) {
+            source = regex.stringByReplacingMatches(
+                in: source, range: NSRange(source.startIndex..., in: source),
+                withTemplate: "\n\n"
+            )
+        }
         var options = AttributedString.MarkdownParsingOptions()
         options.interpretedSyntax = .inlineOnlyPreservingWhitespace
         var attr = (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)

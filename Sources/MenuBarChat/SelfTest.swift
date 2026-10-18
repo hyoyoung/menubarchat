@@ -196,6 +196,10 @@ enum SelfTest {
         check(!PageFetcher.isSufficientText(navSoup), "nav soup insufficient")
         check(PageFetcher.isSufficientText(String(repeating: "real article text ", count: 30)), "real text sufficient")
         check(PageFetcher.cleanedText("  |  |  \n  Hello   world  \n|||\n") == "Hello world", "cleanup drops symbol fragments")
+
+        let collapsed = MessageView.markdown("a\n\n\n\n\nb").description
+        check(!collapsed.contains("\n\n\n"), "excess newlines collapsed")
+        check(MessageView.markdown("a\n\nb").description.contains("\n\n"), "single blank line preserved")
         let giantStyle = "<style>" + String(repeating: ".a{color:red}", count: 60_000) + "</style><p>" + String(repeating: "real body text ", count: 40) + "</p>"
         let strippedGiant = PageFetcher.strippedText(fromHTML: giantStyle)
         check(!strippedGiant.contains("color:red") && strippedGiant.contains("real body text"), "length cut never leaks style blocks")
@@ -280,9 +284,8 @@ enum SelfTest {
             && (seeded.first?.prompt.contains("news.naver.com") ?? false), "seed prompt covers sources")
         check((seeded.first?.prompt.contains("Write the digest in {language}") ?? false)
             && (seeded.first?.prompt.hasPrefix("Summarize") ?? false), "seed prompt english with language placeholder")
-        check((seeded.first?.prompt.contains("top 15 STEM stories (title + one-line summary + source)") ?? false)
-            && (seeded.first?.prompt.contains("for major or trending ones, add 2-3 lines of detail") ?? false)
-            && (seeded.first?.prompt.contains("skip typical news") ?? false), "seed prompt concise STEM")
+        check((seeded.first?.prompt.contains("the top 15 important or unusual events outside STEM") ?? false)
+            && (seeded.first?.prompt.contains("skip typical news without mentioning exclusions") ?? false), "seed prompt non-stem cap and silent exclusion")
         let merged = SettingsStore.mergedCommands(
             builtin: [SlashCommand(name: "news", prompt: "builtin news")],
             user: [SlashCommand(name: "news", prompt: "custom news"), SlashCommand(name: "weather", prompt: "w")]
