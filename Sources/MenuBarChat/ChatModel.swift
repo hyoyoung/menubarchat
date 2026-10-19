@@ -87,6 +87,11 @@ final class ChatModel: ObservableObject {
                 showPreviousNews()
                 return
             }
+            if command.name == "clear-previous-news" {
+                draft = ""
+                clearPreviousNews()
+                return
+            }
             prompt = SlashCommands.expand(prompt, commands: settings.availableCommands) ?? prompt
             prompt = SlashCommands.applyingLanguage(prompt, language: settings.appLanguage)
             fetchTargets = PageFetcher.urls(in: prompt)
@@ -373,6 +378,14 @@ final class ChatModel: ObservableObject {
         followsBottom = true
         let text = NewsHistory.load().first?.text ?? "저장된 다이제스트가 없습니다."
         messages.append(Message(role: .assistant, text: text))
+        finalizeLastAssistantMarkdown()
+    }
+
+    private func clearPreviousNews() {
+        guard !isStreaming else { return }
+        followsBottom = true
+        NewsHistory.clear()
+        messages.append(Message(role: .assistant, text: "이전 다이제스트 이력을 지웠습니다."))
         finalizeLastAssistantMarkdown()
     }
 

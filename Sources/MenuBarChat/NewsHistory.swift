@@ -44,6 +44,10 @@ enum NewsHistory {
         }
     }
 
+    static func clear() {
+        save([])
+    }
+
     // Prompt injection: newest digests joined, or "none" on an empty ring.
     static func previousContext(entries: [Entry], limit: Int = 2) -> String {
         guard !entries.isEmpty else { return "none" }
