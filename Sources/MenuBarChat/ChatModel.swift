@@ -226,7 +226,10 @@ final class ChatModel: ObservableObject {
             messages[index].cachedImage = NSImage(data: staged)
             nextAttachmentID += 1
         }
-        if let index = messages.indices.last, PromptComposer.isLongPaste(prompt) {
+        // Command-expanded prompts are app-generated; however long (e.g.
+        // after {previous} injection), they stay command messages — never
+        // paste cards, which would also skip URL fetching.
+        if let index = messages.indices.last, !viaCommand, PromptComposer.isLongPaste(prompt) {
             messages[index].pasteID = nextAttachmentID
             nextAttachmentID += 1
         }
