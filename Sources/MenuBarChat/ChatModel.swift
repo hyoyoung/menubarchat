@@ -17,6 +17,9 @@ struct Message: Identifiable, Equatable {
     var viaCommand = false
     var commandName: String?
     var pageBundleID = 0
+    // Fetch targets frozen from the pre-{previous} expansion — URLs that
+    // arrive via history injection must never be fetched.
+    var pageTargets: [URL] = []
     // Render-only caches (markdown parse, decoded thumbnail) — excluded
     // from equality; derived from the fields above.
     var cachedMarkdown: AttributedString?
@@ -41,6 +44,7 @@ struct Message: Identifiable, Equatable {
             && lhs.viaCommand == rhs.viaCommand
             && lhs.commandName == rhs.commandName
             && lhs.pageBundleID == rhs.pageBundleID
+            && lhs.pageTargets == rhs.pageTargets
     }
 }
 
@@ -58,6 +62,7 @@ final class ChatModel: ObservableObject {
     @Published var queuedMessage: String?
     private var queuedViaCommand = false
     private var queuedCommandName: String?
+    private var queuedFetchTargets: [URL] = []
     @Published var stagedPaste: String?
     @Published var stagedImage: Data?
     @Published var pasteNotice: String?
@@ -75,6 +80,7 @@ final class ChatModel: ObservableObject {
         var prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         var viaCommand = false
         var commandName: String?
+        var fetchTargets: [URL] = []
         if let command = SlashCommands.matchedCommand(in: prompt, commands: settings.availableCommands) {
             if command.name == "previous-news" {
                 draft = ""
@@ -83,6 +89,7 @@ final class ChatModel: ObservableObject {
             }
             prompt = SlashCommands.expand(prompt, commands: settings.availableCommands) ?? prompt
             prompt = SlashCommands.applyingLanguage(prompt, language: settings.appLanguage)
+            fetchTargets = PageFetcher.urls(in: prompt)
             prompt = prompt.replacingOccurrences(of: "{previous}", with: NewsHistory.previousContext(entries: NewsHistory.load()))
             draft = ""
             viaCommand = true
@@ -114,6 +121,7 @@ final class ChatModel: ObservableObject {
                 queuedMessage = prompt
                 queuedViaCommand = viaCommand
                 queuedCommandName = commandName
+                queuedFetchTargets = fetchTargets
                 draft = ""
             }
             return
@@ -123,7 +131,7 @@ final class ChatModel: ObservableObject {
             return
         }
         draft = ""
-        sendNow(prompt, viaCommand: viaCommand, commandName: commandName)
+        sendNow(prompt, viaCommand: viaCommand, commandName: commandName, fetchTargets: fetchTargets)
     }
 
     private var hasAPIKey: Bool {
@@ -208,7 +216,7 @@ final class ChatModel: ObservableObject {
         }
     }
 
-    private func sendNow(_ prompt: String, viaCommand: Bool = false, commandName: String? = nil) {
+    private func sendNow(_ prompt: String, viaCommand: Bool = false, commandName: String? = nil, fetchTargets: [URL] = []) {
         guard hasAPIKey else {
             showEmptyKeyHint()
             return
@@ -218,6 +226,7 @@ final class ChatModel: ObservableObject {
         if let index = messages.indices.last, viaCommand {
             messages[index].viaCommand = true
             messages[index].commandName = commandName
+            messages[index].pageTargets = fetchTargets
         }
         if let index = messages.indices.last, let staged = stagedImage {
             stagedImage = nil
@@ -248,9 +257,11 @@ final class ChatModel: ObservableObject {
                 queuedMessage = nil
                 let wasCommand = queuedViaCommand
                 let wasCommandName = queuedCommandName
+                let wasFetchTargets = queuedFetchTargets
                 queuedViaCommand = false
                 queuedCommandName = nil
-                sendNow(queued, viaCommand: wasCommand, commandName: wasCommandName)
+                queuedFetchTargets = []
+                sendNow(queued, viaCommand: wasCommand, commandName: wasCommandName, fetchTargets: wasFetchTargets)
             }
         }
     }
@@ -278,7 +289,9 @@ final class ChatModel: ObservableObject {
         guard let index = messages.indices.last, messages[index].role == .user else { return }
         // URLs embedded in a long paste are part of the pasted content, not a fetch target.
         guard messages[index].pasteID == 0 else { return }
-        let all = PageFetcher.urls(in: messages[index].text)
+        let all = messages[index].pageTargets.isEmpty
+            ? PageFetcher.urls(in: messages[index].text)
+            : messages[index].pageTargets
         guard !all.isEmpty else { return }
         // Only command-expanded messages fetch every URL (cap 10); regular
         // messages keep the single-first-URL behavior.
