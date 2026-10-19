@@ -329,7 +329,7 @@ struct ContentView: View {
                 .disabled(!chat.isStreaming
                     && chat.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .overlay(alignment: .top) {
+            .overlay(alignment: .bottom) {
                 let completions = SlashCommands.completions(for: chat.draft, commands: settings.availableCommands)
                 if !completions.isEmpty, !chat.showsSettings {
                     VStack(alignment: .leading, spacing: 2) {
