@@ -641,6 +641,10 @@ struct MessageView: View, Equatable {
                                     Text("명령 · \(message.text.split(separator: "\n", omittingEmptySubsequences: false).count)줄")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
+                                    Text(message.text)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(5)
                                 }
                                 Spacer(minLength: 0)
                             }
