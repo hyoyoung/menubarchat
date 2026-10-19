@@ -109,7 +109,13 @@ enum PromptComposer {
             textless = trimmed.isEmpty ? lastUser.imageData != nil : isURLOnly(lastUser.text)
         }
         let lastAssistantIndex = textless ? nil : messages.lastIndex(where: { $0.role == .assistant })
+        // Bare-URL requests are hermetic: only that message (plus its
+        // instruction) is sent — no prior history.
+        let hermetic = lastUser.map { isURLOnly($0.text) } ?? false
         return messages.enumerated().compactMap { index, message in
+            if hermetic && index != messages.count - 1 {
+                return nil
+            }
             if message.role == .assistant, index != lastAssistantIndex {
                 return nil
             }

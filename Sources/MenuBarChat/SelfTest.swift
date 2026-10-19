@@ -207,6 +207,26 @@ enum SelfTest {
         check(NewsHistory.trimmed(entries: (0..<7).map { NewsHistory.Entry(date: now, text: "e\($0)") }, now: now).count == 5, "ring capped at 5")
         check(NewsHistory.previousContext(entries: []) == "none", "empty history injects none")
         check(NewsHistory.previousContext(entries: entries.filter { $0.text != "expired" }).hasPrefix("newest"), "previous context newest first")
+
+        let hermetic = PromptComposer.transcript(
+            messages: [
+                Message(role: .user, text: "hi"),
+                Message(role: .assistant, text: "yo"),
+                Message(role: .user, text: "https://example.com")
+            ],
+            urlHandling: "summarize it"
+        )
+        check(hermetic.count == 1 && hermetic[0].content.contains("https://example.com")
+            && hermetic[0].content.contains("Instruction"), "bare URL request hermetic")
+        let contextual = PromptComposer.transcript(
+            messages: [
+                Message(role: .user, text: "hi"),
+                Message(role: .assistant, text: "yo"),
+                Message(role: .user, text: "check https://example.com please")
+            ],
+            urlHandling: "summarize it"
+        )
+        check(contextual.count == 3, "mixed URL message keeps full history")
         let collapsed = MessageView.markdown("a\n\n\n\n\nb").description
         check(!collapsed.contains("\n\n\n"), "excess newlines collapsed")
         check(MessageView.markdown("a\n\nb").description.contains("\n\n"), "single blank line preserved")
@@ -251,7 +271,7 @@ enum SelfTest {
 
         let urlOnly = Message(role: .user, text: "https://example.com")
         let withURL = [Message(role: .user, text: "q1"), Message(role: .assistant, text: "a1"), urlOnly]
-        check(PromptComposer.transcript(messages: withURL, urlHandling: "").map(\.role) == ["user", "user"], "URL-only send drops last reply")
+        check(PromptComposer.transcript(messages: withURL, urlHandling: "").map(\.role) == ["user"], "URL-only send is hermetic (no prior user history)")
 
         var imageOnly = Message(role: .user, text: "")
         imageOnly.imageData = Data([1])
