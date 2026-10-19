@@ -624,7 +624,39 @@ struct MessageView: View, Equatable {
                 }
                 if !message.text.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
-                        if message.role == .user && message.pasteID > 0 {
+                        if message.viaCommand, let name = message.commandName,
+                           PromptComposer.isLongPaste(message.text) {
+                            // Display-only fold: the full text still goes to
+                            // the request; paste classification is untouched.
+                            HStack(spacing: 10) {
+                                Image(systemName: "terminal")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 40, height: 40)
+                                    .background(Color(nsColor: .quaternaryLabelColor))
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("/" + name)
+                                        .font(.callout)
+                                    Text("명령 · \(message.text.split(separator: "\n", omittingEmptySubsequences: false).count)줄")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            if message.isTextExpanded {
+                                Text(message.text)
+                            }
+                            Button(message.isTextExpanded ? "Less" : "More") {
+                                if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
+                                    chat.messages[index].isTextExpanded.toggle()
+                                }
+                            }
+                            .font(.caption)
+                            .italic()
+                            .foregroundStyle(.secondary)
+                            .buttonStyle(.plain)
+                        } else if message.role == .user && message.pasteID > 0 {
                             HStack(spacing: 10) {
                                 Image(systemName: "doc.text")
                                     .font(.callout)
