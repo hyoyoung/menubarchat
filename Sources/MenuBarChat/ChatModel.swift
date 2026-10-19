@@ -369,7 +369,10 @@ final class ChatModel: ObservableObject {
               index > messages.startIndex
         else { return }
         let preceding = messages[index - 1]
-        if preceding.viaCommand, preceding.commandName == "news" {
+        // Only source-backed digests belong in the ring — a fetch-less run
+        // (refusals, notices) would pollute the next {previous} injection.
+        if preceding.viaCommand, preceding.commandName == "news",
+           preceding.pages.contains(where: { $0.error == nil }) {
             NewsHistory.append(assistant.text)
         }
     }
