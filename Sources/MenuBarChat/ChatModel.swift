@@ -354,6 +354,7 @@ final class ChatModel: ObservableObject {
                 thinkingBudget: settings.thinkingBudget,
                 webSearch: settings.webSearch,
                 messages: contents,
+                system: Self.summarizationSystem(messages: messages, urlHandling: instruction),
                 lastContentParts: lastParts
             )
             for try await delta in deltas {
@@ -389,6 +390,16 @@ final class ChatModel: ObservableObject {
         finalizeLastAssistantMarkdown()
     }
 
+
+    // Default-instruction requests carry their instruction in the system
+    // role with an untrusted-data preamble (prompt-injection hardening).
+    nonisolated static func summarizationSystem(messages: [Message], urlHandling: String) -> String {
+        guard let lastUser = messages.last(where: { $0.role == .user }),
+              PromptComposer.instructionApplies(to: lastUser),
+              !urlHandling.isEmpty
+        else { return "" }
+        return PromptComposer.untrustedPreamble + " " + urlHandling
+    }
 
     private func saveNewsHistoryIfNeeded() {
         guard let assistant = messages.last, assistant.role == .assistant,

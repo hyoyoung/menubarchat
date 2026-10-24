@@ -228,8 +228,20 @@ enum PageFetcher {
         return scanTags(String(text.prefix(500_000)))
     }
 
+    // Invisible-to-humans elements (tiny fonts, CSS/attribute hiding) are a
+    // prompt-injection vector — drop the whole element before extraction.
+    static func removingHiddenElements(_ html: String) -> String {
+        let pattern = #"<([a-zA-Z][a-zA-Z0-9]*)([^>]*(?:style="[^"]*(?:display\s*:\s*none|visibility\s*:\s*hidden|opacity\s*:\s*0(?:\.0+)?|font-size\s*:\s*[0-8](?:\.\d+)?px)|text-\[[0-8]px\]|aria-hidden="true"|\shidden(?:\s|>))[^>]*)>.*?</\1>"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) else {
+            return html
+        }
+        return regex.stringByReplacingMatches(
+            in: html, range: NSRange(html.startIndex..., in: html), withTemplate: ""
+        )
+    }
+
     private static func plainText(fromHTML html: String, url: URL) async -> String {
-        let stripped = strippedText(fromHTML: html)
+        let stripped = strippedText(fromHTML: removingHiddenElements(html))
         return await resolvedText(stripped: stripped, runImporter: {
             await withTaskGroup(of: String?.self) { group in
                 group.addTask { await renderInnerText(of: url) }
@@ -253,6 +265,17 @@ enum PageFetcher {
         for _ in 0..<50 {
             if Task.isCancelled { return nil }
             try? await Task.sleep(nanoseconds: 100_000_000)
+            // Drop invisible nodes (tiny fonts, hidden) — same injection
+            // vector as the static filter, resolved via computed styles.
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                webView.evaluateJavaScript("""
+                document.querySelectorAll('body *').forEach(el => {
+                    const s = getComputedStyle(el);
+                    const size = parseFloat(s.fontSize) || 16;
+                    if (s.visibility === 'hidden' || parseFloat(s.opacity) === 0 || size < 9) el.remove();
+                });
+                """, completionHandler: { _, _ in continuation.resume() })
+            }
             let text: String? = await withCheckedContinuation { continuation in
                 webView.evaluateJavaScript("document.body.innerText", completionHandler: { result, _ in
                     continuation.resume(returning: result as? String)

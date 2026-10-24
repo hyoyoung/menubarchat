@@ -92,7 +92,7 @@ enum SelfTest {
     private static func lastPageIncludesFullText() {
         let first = pageMessage("check this", pageID: 2)
         let content = content(first, messages: [first], isLast: true)
-        check(content.contains("[Page ID2 — example.com]\nPAGE BODY"), "last page includes body")
+        check(content.contains("[Page ID2 — example.com]\n<untrusted_page_content>\nPAGE BODY\n</untrusted_page_content>"), "last page includes body")
     }
 
     private static func mentionReincludesPasteWithoutDuplicate() {
@@ -113,13 +113,13 @@ enum SelfTest {
     private static func instructionAttachedToURLOnlyMessage() {
         let last = Message(role: .user, text: "https://example.com")
         let content = content(last, messages: [last], isLast: true, urlHandling: "summarize it in Korean")
-        check(content.contains("[Instruction: summarize it in Korean — unless the user already asked something specific above]"), "URL-only -> instruction")
+        check(!content.contains("[Instruction:") && !content.contains("untrusted"), "URL-only keeps instruction out of user content")
     }
 
     private static func instructionAttachedToLongPaste() {
         let last = pasteMessage(longPaste, id: 1)
         let content = content(last, messages: [last], isLast: true, urlHandling: "summarize it in Korean")
-        check(content.contains("[Instruction: summarize it in Korean"), "long paste -> instruction")
+        check(content.contains("[Pasted text ID1p]\n<untrusted_page_content>"), "long paste wrapped untrusted")
     }
 
     private static func instructionSkippedForPlainMessage() {
@@ -221,7 +221,7 @@ enum SelfTest {
             urlHandling: "summarize it"
         )
         check(hermetic.count == 1 && hermetic[0].content.contains("https://example.com")
-            && hermetic[0].content.contains("Instruction"), "bare URL request hermetic")
+            && !hermetic[0].content.contains("[Instruction:"), "bare URL request hermetic")
         let contextual = PromptComposer.transcript(
             messages: [
                 Message(role: .user, text: "hi"),
@@ -249,6 +249,28 @@ enum SelfTest {
         )
         check(anchors.map(\.url) == ["https://example.com/a", "https://example.com/rel"]
             && anchors.first?.title == "Story A", "anchor filtering dedup, fragments, scripts, relative resolution")
+
+        let cleaned = PageFetcher.removingHiddenElements(
+            "<p>visible</p>"
+            + "<p style=\"font-size:8px\">tiny</p>"
+            + "<p class=\"text-[8px] mt-1\">tailwind tiny</p>"
+            + "<div style=\"display:none\">gone</div>"
+            + "<p aria-hidden=\"true\">aria</p>"
+            + "<p style=\"color:red\">kept</p>"
+        )
+        check(cleaned.contains("visible") && cleaned.contains("kept")
+            && !cleaned.contains("tiny") && !cleaned.contains("gone") && !cleaned.contains("aria"), "hidden elements stripped before extraction")
+
+        let summarized = PromptComposer.transcript(
+            messages: [Message(role: .user, text: "https://example.com")],
+            urlHandling: "summarize it"
+        )
+        let sys = ChatModel.summarizationSystem(
+            messages: [Message(role: .user, text: "https://example.com")],
+            urlHandling: "summarize it in Korean"
+        )
+        check(sys.hasPrefix(PromptComposer.untrustedPreamble) && sys.contains("Korean"), "summarization system preamble assembled")
+        check(!summarized[0].content.contains("[Instruction:"), "user content no longer carries instruction suffix")
         let giantStyle = "<style>" + String(repeating: ".a{color:red}", count: 60_000) + "</style><p>" + String(repeating: "real body text ", count: 40) + "</p>"
         let strippedGiant = PageFetcher.strippedText(fromHTML: giantStyle)
         check(!strippedGiant.contains("color:red") && strippedGiant.contains("real body text"), "length cut never leaks style blocks")

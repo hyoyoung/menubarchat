@@ -28,6 +28,7 @@ enum LLMClient {
         thinkingBudget: String,
         webSearch: Bool,
         messages: [(role: String, content: String)],
+        system: String = "",
         lastContentParts: [[String: Any]]? = nil
     ) -> AsyncThrowingStream<Delta, Error> {
         AsyncThrowingStream { continuation in
@@ -45,6 +46,9 @@ enum LLMClient {
                     request.timeoutInterval = 300
 
                     var payloadMessages: [[String: Any]] = messages.map { ["role": $0.role, "content": $0.content] }
+                    if !system.isEmpty {
+                        payloadMessages.insert(["role": "system", "content": system], at: 0)
+                    }
                     if let parts = lastContentParts, !payloadMessages.isEmpty {
                         payloadMessages[payloadMessages.count - 1]["content"] = parts
                     }
