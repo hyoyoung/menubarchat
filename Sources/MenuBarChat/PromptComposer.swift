@@ -183,6 +183,10 @@ enum PromptComposer {
         return String(line.prefix(60))
     }
 
+    static func isURLOnlyMessage(_ text: String) -> Bool {
+        isURLOnly(text)
+    }
+
     private static func isURLOnly(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = PageFetcher.urls(in: trimmed).first else { return false }
