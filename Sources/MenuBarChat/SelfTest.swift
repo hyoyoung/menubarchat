@@ -208,6 +208,12 @@ enum SelfTest {
         check(NewsHistory.previousContext(entries: []) == "none", "empty history injects none")
         check(NewsHistory.previousContext(entries: entries.filter { $0.text != "expired" }).hasPrefix("newest"), "previous context newest first")
 
+        let capped = PageFetcher.filteredAnchors(
+            raw: (0..<85).map { (text: "Story \($0)", href: "https://example.com/s\($0)") },
+            base: URL(string: "https://example.com/news")!
+        )
+        check(capped.count == 80, "anchor cap raised to 80 per page")
+
         let plain = NewsHistory.plainDigest("**1. [Title](https://x.com/a)** — summary *(Naver)*")
         check(!plain.contains("*") && !plain.contains("["), "history injection sanitized to plain text")
         check(plain.contains("Title") && plain.contains("summary"), "sanitized history keeps title text")
@@ -360,6 +366,9 @@ enum SelfTest {
         check((seeded.first?.prompt.contains("Format STEM entries as: **[Title](URL)**") ?? false)
             && (seeded.first?.prompt.contains("except with plain (not bold) titles") ?? false)
             && (seeded.first?.prompt.contains("Use only URLs from the Links lists") ?? false), "seed prompt section title weights")
+        check((seeded.first?.prompt.contains("attach the most plausible anchor even when the title is paraphrased") ?? false), "seed prompt anchor match softening")
+        check((seeded.first?.prompt.contains("give every STEM entry 2-3 lines below the title") ?? false)
+            && (seeded.first?.prompt.contains("Each general entry stays on a single line") ?? false), "seed prompt section density")
         let merged = SettingsStore.mergedCommands(
             builtin: [SlashCommand(name: "news", prompt: "builtin news")],
             user: [SlashCommand(name: "news", prompt: "custom news"), SlashCommand(name: "weather", prompt: "w")]

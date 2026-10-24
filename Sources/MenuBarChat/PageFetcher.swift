@@ -306,7 +306,7 @@ enum PageFetcher {
             let key = url.absoluteString
             guard seen.insert(key).inserted else { continue }
             result.append(FetchedPage.Link(title: title, url: key))
-            if result.count >= 40 { break }
+            if result.count >= 80 { break }
         }
         return result
     }
