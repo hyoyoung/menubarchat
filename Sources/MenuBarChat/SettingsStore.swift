@@ -91,12 +91,13 @@ final class SettingsStore: ObservableObject {
             https://news.naver.com/ — \
             pick the top 15 STEM stories (title + one-line summary + source); \
             for major or trending ones, add 2-3 lines of detail. \
-            Format every entry in both sections as: **[Title](URL)** — \
-            one-line summary; when the URL is uncertain, use **Title** — \
-            summary. Use only URLs from the Links lists. \
+            Format STEM entries as: **[Title](URL)** — one-line summary; \
+            when the URL is uncertain, use **Title** — summary. \
             Follow with the top 15 general news stories, formatted the \
-            same way, one line each — skip typical news without mentioning \
-            exclusions. \
+            same way except with plain (not bold) titles: [Title](URL) — \
+            one-line summary; when the URL is uncertain, use Title — \
+            summary. Use only URLs from the Links lists. Skip typical news \
+            without mentioning exclusions. \
             Below are previous digests; keep already-covered STEM stories \
             unless minor, and skip already-covered general news unless it \
             is a major development: {previous} \

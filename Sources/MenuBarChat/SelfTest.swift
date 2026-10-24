@@ -335,9 +335,9 @@ enum SelfTest {
             && (seeded.first?.prompt.hasPrefix("Summarize") ?? false), "seed prompt english with language placeholder")
         check((seeded.first?.prompt.contains("keep already-covered STEM stories unless minor") ?? false)
             && (seeded.first?.prompt.contains("skip already-covered general news unless it is a major development") ?? false), "seed prompt section-wise dedup")
-        check((seeded.first?.prompt.contains("Format every entry in both sections as: **[Title](URL)**") ?? false)
-            && (seeded.first?.prompt.contains("when the URL is uncertain, use **Title** — summary.") ?? false)
-            && (seeded.first?.prompt.contains("formatted the same way") ?? false), "seed prompt link format instruction")
+        check((seeded.first?.prompt.contains("Format STEM entries as: **[Title](URL)**") ?? false)
+            && (seeded.first?.prompt.contains("except with plain (not bold) titles") ?? false)
+            && (seeded.first?.prompt.contains("Use only URLs from the Links lists") ?? false), "seed prompt section title weights")
         let merged = SettingsStore.mergedCommands(
             builtin: [SlashCommand(name: "news", prompt: "builtin news")],
             user: [SlashCommand(name: "news", prompt: "custom news"), SlashCommand(name: "weather", prompt: "w")]
