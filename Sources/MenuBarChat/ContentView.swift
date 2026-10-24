@@ -234,10 +234,10 @@ struct ContentView: View {
                 .padding(.top, 8)
             }
 
-            if let queued = chat.queuedMessage {
+            if !chat.queuedMessages.isEmpty {
                 VStack(spacing: 6) {
                     HStack {
-                        Text("대기 메시지 1개")
+                        Text("대기 메시지 \(chat.queuedMessages.count)개")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -247,39 +247,41 @@ struct ContentView: View {
                             .buttonStyle(.plain)
                             .keyboardShortcut(.delete, modifiers: [.option, .command])
                     }
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color.accentColor)
-                            .frame(width: 6, height: 6)
-                        Text(queued)
-                            .font(.system(.callout, design: .monospaced))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                        Spacer(minLength: 8)
-                        Button {
-                            chat.clearQueued()
-                        } label: {
-                            Image(systemName: "trash")
+                    ForEach(chat.queuedMessages) { queued in
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(Color.accentColor)
+                                .frame(width: 6, height: 6)
+                            Text(queued.text)
+                                .font(.system(.callout, design: .monospaced))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                            Spacer(minLength: 8)
+                            Button {
+                                chat.removeQueued(queued)
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .buttonStyle(.plain)
+                            .help("대기 메시지 삭제")
+                            Button {
+                                chat.unqueueToDraft(queued)
+                            } label: {
+                                Image(systemName: "pencil")
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .buttonStyle(.plain)
+                            .help("초안으로 되돌리기")
+                            Button("지금 보내기 ↵") {
+                                chat.sendQueuedNow(queued)
+                            }
+                            .font(.caption)
+                            .buttonStyle(.borderless)
+                            .disabled(!chat.isStreaming)
                         }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .buttonStyle(.plain)
-                        .help("대기 메시지 삭제")
-                        Button {
-                            chat.unqueueToDraft()
-                        } label: {
-                            Image(systemName: "pencil")
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .buttonStyle(.plain)
-                        .help("초안으로 되돌리기")
-                        Button("지금 보내기 ↵") {
-                            chat.stop()
-                        }
-                        .font(.caption)
-                        .buttonStyle(.borderless)
-                        .disabled(!chat.isStreaming)
                     }
                     Divider()
                 }
@@ -302,7 +304,7 @@ struct ContentView: View {
                         chat.convertDraftImage()
                     }
                     .onSubmit {
-                        if chat.queuedMessage != nil,
+                        if !chat.queuedMessages.isEmpty,
                            chat.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             chat.stop()
                         } else {

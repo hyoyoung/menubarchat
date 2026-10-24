@@ -59,10 +59,15 @@ final class ChatModel: ObservableObject {
     @Published var hoveredMessageID: UUID?
     private var nextAttachmentID = 1
     @Published var showsSettings = false
-    @Published var queuedMessage: String?
-    private var queuedViaCommand = false
-    private var queuedCommandName: String?
-    private var queuedFetchTargets: [URL] = []
+    struct QueuedMessage: Identifiable, Equatable {
+        let id = UUID()
+        let text: String
+        let viaCommand: Bool
+        let commandName: String?
+        let fetchTargets: [URL]
+    }
+    @Published var queuedMessages: [QueuedMessage] = []
+    static let queueLimit = 3
     @Published var stagedPaste: String?
     @Published var stagedImage: Data?
     @Published var pasteNotice: String?
@@ -122,11 +127,13 @@ final class ChatModel: ObservableObject {
         }
         guard !prompt.isEmpty || stagedImage != nil else { return }
         if isStreaming {
-            if stagedImage == nil, queuedMessage == nil {
-                queuedMessage = prompt
-                queuedViaCommand = viaCommand
-                queuedCommandName = commandName
-                queuedFetchTargets = fetchTargets
+            if stagedImage == nil, queuedMessages.count < Self.queueLimit {
+                queuedMessages.append(QueuedMessage(
+                    text: prompt,
+                    viaCommand: viaCommand,
+                    commandName: commandName,
+                    fetchTargets: fetchTargets
+                ))
                 draft = ""
             }
             return
@@ -148,7 +155,20 @@ final class ChatModel: ObservableObject {
     }
 
     func clearQueued() {
-        queuedMessage = nil
+        queuedMessages.removeAll()
+    }
+
+    func removeQueued(_ message: QueuedMessage) {
+        queuedMessages.removeAll { $0.id == message.id }
+    }
+
+    // Promote to front and stop: the drain after cancellation sends this
+    // item immediately while the rest keep their order.
+    func sendQueuedNow(_ message: QueuedMessage) {
+        guard let index = queuedMessages.firstIndex(where: { $0.id == message.id }) else { return }
+        queuedMessages.remove(at: index)
+        queuedMessages.insert(message, at: 0)
+        stop()
     }
 
     func stagePaste(_ text: String) {
@@ -211,13 +231,12 @@ final class ChatModel: ObservableObject {
         }
     }
 
-    func unqueueToDraft() {
-        guard let queued = queuedMessage else { return }
-        queuedMessage = nil
+    func unqueueToDraft(_ message: QueuedMessage) {
+        queuedMessages.removeAll { $0.id == message.id }
         if draft.isEmpty {
-            draft = queued
+            draft = message.text
         } else {
-            draft += "\n" + queued
+            draft += "\n" + message.text
         }
     }
 
@@ -258,15 +277,9 @@ final class ChatModel: ObservableObject {
             if finished {
                 saveNewsHistoryIfNeeded()
             }
-            if let queued = queuedMessage {
-                queuedMessage = nil
-                let wasCommand = queuedViaCommand
-                let wasCommandName = queuedCommandName
-                let wasFetchTargets = queuedFetchTargets
-                queuedViaCommand = false
-                queuedCommandName = nil
-                queuedFetchTargets = []
-                sendNow(queued, viaCommand: wasCommand, commandName: wasCommandName, fetchTargets: wasFetchTargets)
+            if let queued = queuedMessages.first {
+                queuedMessages.removeFirst()
+                sendNow(queued.text, viaCommand: queued.viaCommand, commandName: queued.commandName, fetchTargets: queued.fetchTargets)
             }
         }
     }
