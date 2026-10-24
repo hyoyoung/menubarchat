@@ -2,11 +2,17 @@ import AppKit
 import WebKit
 
 struct FetchedPage: Equatable {
+    struct Link: Equatable {
+        let title: String
+        let url: String
+    }
+
     var id = 0
     let host: String
     let text: String
     let imageURL: URL?
     let error: String?
+    var links: [Link] = []
 }
 
 enum PageFetcher {
@@ -44,7 +50,8 @@ enum PageFetcher {
                 host: host,
                 text: String(text.prefix(20_000)),
                 imageURL: ogImage(in: html),
-                error: nil
+                error: nil,
+                links: anchors(inHTML: html, base: url)
             )
         } catch {
             let reason = (error as? URLError)?.code == .timedOut ? "timeout" : "network error"
@@ -256,6 +263,46 @@ enum PageFetcher {
             }
         }
         return nil
+    }
+
+    // Anchor (title, URL) pairs for digest linking: http(s) only, relative
+    // hrefs resolved against the page, fragments/empties dropped, capped.
+    static func filteredAnchors(raw: [(text: String, href: String)], base: URL) -> [FetchedPage.Link] {
+        var seen = Set<String>()
+        var result: [FetchedPage.Link] = []
+        for pair in raw {
+            let title = pair.text
+                .split(whereSeparator: \.isNewline).first.map(String.init)?
+                .trimmingCharacters(in: .whitespaces) ?? ""
+            guard !title.isEmpty, !pair.href.hasPrefix("#") else { continue }
+            guard let url = URL(string: pair.href, relativeTo: base)?.absoluteURL,
+                  let scheme = url.scheme?.lowercased(),
+                  scheme == "http" || scheme == "https",
+                  url.host() != nil
+            else { continue }
+            let key = url.absoluteString
+            guard seen.insert(key).inserted else { continue }
+            result.append(FetchedPage.Link(title: title, url: key))
+            if result.count >= 40 { break }
+        }
+        return result
+    }
+
+    static func anchors(inHTML html: String, base: URL) -> [FetchedPage.Link] {
+        var raw: [(text: String, href: String)] = []
+        if let regex = try? NSRegularExpression(
+            pattern: #"<a\b[^>]*href="([^"]+)"[^>]*>(.*?)</a>"#,
+            options: [.dotMatchesLineSeparators]
+        ) {
+            regex.enumerateMatches(in: html, range: NSRange(html.startIndex..., in: html)) { match, _, _ in
+                guard let match,
+                      let href = Range(match.range(at: 1), in: html).map({ String(html[$0]) }),
+                      let body = Range(match.range(at: 2), in: html).map({ String(html[$0]) })
+                else { return }
+                raw.append((text: strippedText(fromHTML: body), href: href))
+            }
+        }
+        return filteredAnchors(raw: raw, base: base)
     }
 
     private static func scanTags(_ html: String) -> String {

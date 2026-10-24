@@ -239,6 +239,21 @@ enum SelfTest {
         let collapsed = MessageView.markdown("a\n\n\n\n\nb").description
         check(!collapsed.contains("\n\n\n"), "excess newlines collapsed")
         check(MessageView.markdown("a\n\nb").description.contains("\n\n"), "single blank line preserved")
+
+        let base = URL(string: "https://example.com/news")!
+        let anchors = PageFetcher.filteredAnchors(
+            raw: [
+                (text: "Story A", href: "https://example.com/a"),
+                (text: "  Story A dup  ", href: "/a"),
+                (text: "", href: "https://example.com/empty-title"),
+                (text: "Skip fragment", href: "#section"),
+                (text: "Skip script", href: "javascript:alert(1)"),
+                (text: "Relative story", href: "/rel")
+            ],
+            base: base
+        )
+        check(anchors.map(\.url) == ["https://example.com/a", "https://example.com/rel"]
+            && anchors.first?.title == "Story A", "anchor filtering dedup, fragments, scripts, relative resolution")
         let giantStyle = "<style>" + String(repeating: ".a{color:red}", count: 60_000) + "</style><p>" + String(repeating: "real body text ", count: 40) + "</p>"
         let strippedGiant = PageFetcher.strippedText(fromHTML: giantStyle)
         check(!strippedGiant.contains("color:red") && strippedGiant.contains("real body text"), "length cut never leaks style blocks")
@@ -325,6 +340,9 @@ enum SelfTest {
             && (seeded.first?.prompt.hasPrefix("Summarize") ?? false), "seed prompt english with language placeholder")
         check((seeded.first?.prompt.contains("keep already-covered STEM stories unless minor") ?? false)
             && (seeded.first?.prompt.contains("skip already-covered general news unless it is a major development") ?? false), "seed prompt section-wise dedup")
+        check((seeded.first?.prompt.contains("Format each entry as: **[Title](URL)** — one-line summary") ?? false)
+            && (seeded.first?.prompt.contains("when the URL is uncertain, use *Title* — summary instead") ?? false)
+            && (seeded.first?.prompt.contains("Use only URLs from the Links lists") ?? false), "seed prompt link format instruction")
         let merged = SettingsStore.mergedCommands(
             builtin: [SlashCommand(name: "news", prompt: "builtin news")],
             user: [SlashCommand(name: "news", prompt: "custom news"), SlashCommand(name: "weather", prompt: "w")]

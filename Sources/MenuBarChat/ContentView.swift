@@ -781,6 +781,12 @@ struct SelectableTextView: NSViewRepresentable {
         textView.drawsBackground = false
         textView.textContainerInset = NSSize.zero
         textView.textColor = .labelColor
+        // Plain-looking links: normal text color, no underline (click still
+        // opens the browser; bold/italic remain the only visual cue).
+        textView.linkTextAttributes = [
+            .foregroundColor: NSColor.labelColor,
+            .underlineStyle: 0
+        ]
         return textView
     }
 

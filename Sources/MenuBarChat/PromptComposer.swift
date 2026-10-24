@@ -51,6 +51,10 @@ enum PromptComposer {
             let excerpts = excerpts(pages)
             for (page, excerpt) in zip(pages, excerpts) {
                 content += "\n\n[Source — \(page.host)]\n\(excerpt)"
+                if !page.links.isEmpty {
+                    let list = page.links.map { "- \($0.title) | \($0.url)" }.joined(separator: "\n")
+                    content += "\n\nLinks:\n\(list)"
+                }
             }
         } else {
             for page in pages {
