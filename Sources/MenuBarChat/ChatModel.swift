@@ -351,7 +351,7 @@ final class ChatModel: ObservableObject {
                 baseURL: settings.baseURL,
                 apiKey: settings.apiKey,
                 model: settings.model,
-                thinkingBudget: Self.effectiveThinkingBudget(messages: messages, base: settings.thinkingBudget),
+                thinkingBudget: settings.thinkingBudget,
                 webSearch: settings.webSearch,
                 messages: contents,
                 lastContentParts: lastParts
@@ -389,17 +389,6 @@ final class ChatModel: ObservableObject {
         finalizeLastAssistantMarkdown()
     }
 
-    // Summarize-shaped requests (bare URL, long paste, news digest) don't
-    // need deep reasoning — cap their thinking budget for faster first tokens.
-    nonisolated static func effectiveThinkingBudget(messages: [Message], base: String) -> String {
-        guard let lastUser = messages.last(where: { $0.role == .user }) else {
-            return base
-        }
-        if lastUser.viaCommand, lastUser.commandName == "news" { return "medium" }
-        if lastUser.pasteID > 0 { return "medium" }
-        if PromptComposer.isURLOnlyMessage(lastUser.text) { return "medium" }
-        return base
-    }
 
     private func saveNewsHistoryIfNeeded() {
         guard let assistant = messages.last, assistant.role == .assistant,

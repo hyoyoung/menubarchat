@@ -227,15 +227,6 @@ enum SelfTest {
             urlHandling: "summarize it"
         )
         check(contextual.count == 3, "mixed URL message keeps full history")
-
-        check(ChatModel.effectiveThinkingBudget(
-            messages: [Message(role: .user, text: "https://example.com")],
-            base: "high"
-        ) == "medium", "bare URL request uses medium thinking")
-        check(ChatModel.effectiveThinkingBudget(
-            messages: [Message(role: .user, text: "explain this https://example.com")],
-            base: "high"
-        ) == "high", "explicit question keeps setting budget")
         let collapsed = MessageView.markdown("a\n\n\n\n\nb").description
         check(!collapsed.contains("\n\n\n"), "excess newlines collapsed")
         check(MessageView.markdown("a\n\nb").description.contains("\n\n"), "single blank line preserved")
@@ -341,7 +332,7 @@ enum SelfTest {
         check((seeded.first?.prompt.contains("keep already-covered STEM stories unless minor") ?? false)
             && (seeded.first?.prompt.contains("skip already-covered general news unless it is a major development") ?? false), "seed prompt section-wise dedup")
         check((seeded.first?.prompt.contains("Format each entry as: **[Title](URL)** — one-line summary") ?? false)
-            && (seeded.first?.prompt.contains("when the URL is uncertain, use *Title* — summary instead") ?? false)
+            && (seeded.first?.prompt.contains("when the URL is uncertain, use **Title** — summary.") ?? false)
             && (seeded.first?.prompt.contains("Use only URLs from the Links lists") ?? false), "seed prompt link format instruction")
         let merged = SettingsStore.mergedCommands(
             builtin: [SlashCommand(name: "news", prompt: "builtin news")],
