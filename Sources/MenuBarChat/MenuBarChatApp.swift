@@ -185,9 +185,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func togglePanel() {
-        // Hide only when truly visible; a visible-flagged but occluded panel
-        // is re-shown below the icon instead of consuming the click to hide.
-        if panel.isVisible && panel.occlusionState.contains(.visible) {
+        // Hide only while actively used (key): a visible-but-covered panel
+        // (behind other apps, another Space) must re-show on click instead
+        // of consuming it to hide — occlusion lags and false-positives.
+        if panel.isVisible && panel.isKeyWindow {
             panel.orderOut(nil)
             chat.showsSettings = false
             return
