@@ -651,7 +651,8 @@ struct MessageView: View, Equatable {
                             if message.isTextExpanded {
                                 Text(message.text)
                             }
-                            Button(message.isTextExpanded ? "Less" : "More") {
+                            Button((message.isTextExpanded ? "Less" : "More")
+                                + (message.pageBundleID > 0 ? ", ID\(message.pageBundleID)" : "")) {
                                 if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
                                     chat.messages[index].isTextExpanded.toggle()
                                 }
