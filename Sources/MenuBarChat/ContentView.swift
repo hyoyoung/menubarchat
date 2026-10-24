@@ -787,6 +787,10 @@ struct SelectableTextView: NSViewRepresentable {
     func updateNSView(_ textView: NSTextView, context: Context) {
         textView.textStorage?.setAttributedString(NSAttributedString(attributed))
         textView.textColor = .labelColor
+        // Streaming deltas swap the storage constantly; without an explicit
+        // invalidation SwiftUI keeps stale frames (blank until scrolled).
+        textView.needsLayout = true
+        textView.needsDisplay = true
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSTextView, context: Context) -> CGSize? {
@@ -795,7 +799,7 @@ struct SelectableTextView: NSViewRepresentable {
               let layoutManager = nsView.layoutManager
         else { return nil }
         container.size = CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
-        layoutManager.glyphRange(for: container)
+        layoutManager.ensureLayout(for: container)
         let used = layoutManager.usedRect(for: container)
         return CGSize(width: width, height: ceil(used.height))
     }
