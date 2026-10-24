@@ -51,6 +51,26 @@ enum NewsHistory {
     // Prompt injection: newest digests joined, or "none" on an empty ring.
     static func previousContext(entries: [Entry], limit: Int = 2) -> String {
         guard !entries.isEmpty else { return "none" }
-        return entries.prefix(limit).map(\.text).joined(separator: "\n---\n")
+        return entries.prefix(limit)
+            .map { plainDigest($0.text) }
+            .joined(separator: "\n---\n")
+    }
+
+    // History exists to identify covered stories, not to serve as a
+    // formatting example — strip markup so old styles can't propagate.
+    static func plainDigest(_ text: String) -> String {
+        var plain = text
+        let range = NSRange(plain.startIndex..., in: plain)
+        if let regex = try? NSRegularExpression(pattern: #"\[([^\]]+)\]\([^)]+\)"#) {
+            plain = regex.stringByReplacingMatches(in: plain, range: range, withTemplate: "$1")
+        }
+        plain = plain.replacingOccurrences(of: "**", with: "")
+        plain = plain.replacingOccurrences(of: "__", with: "")
+        if let regex = try? NSRegularExpression(pattern: #"\*([^*\n]+)\*"#) {
+            plain = regex.stringByReplacingMatches(
+                in: plain, range: NSRange(plain.startIndex..., in: plain), withTemplate: "$1"
+            )
+        }
+        return plain
     }
 }

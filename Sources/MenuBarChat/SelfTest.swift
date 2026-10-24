@@ -208,6 +208,10 @@ enum SelfTest {
         check(NewsHistory.previousContext(entries: []) == "none", "empty history injects none")
         check(NewsHistory.previousContext(entries: entries.filter { $0.text != "expired" }).hasPrefix("newest"), "previous context newest first")
 
+        let plain = NewsHistory.plainDigest("**1. [Title](https://x.com/a)** — summary *(Naver)*")
+        check(!plain.contains("*") && !plain.contains("["), "history injection sanitized to plain text")
+        check(plain.contains("Title") && plain.contains("summary"), "sanitized history keeps title text")
+
         let hermetic = PromptComposer.transcript(
             messages: [
                 Message(role: .user, text: "hi"),
