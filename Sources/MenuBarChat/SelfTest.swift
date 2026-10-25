@@ -209,7 +209,7 @@ enum SelfTest {
         check(NewsHistory.previousContext(entries: entries.filter { $0.text != "expired" }).hasPrefix("newest"), "previous context newest first")
 
         let capped = PageFetcher.filteredAnchors(
-            raw: (0..<85).map { (text: "Story \($0)", href: "https://example.com/s\($0)") },
+            raw: (0..<85).map { (text: "Story \($0)", href: "https://out.com/s\($0)") },
             base: URL(string: "https://example.com/news")!
         )
         check(capped.count == 80, "anchor cap raised to 80 per page")
@@ -244,17 +244,18 @@ enum SelfTest {
         let base = URL(string: "https://example.com/news")!
         let anchors = PageFetcher.filteredAnchors(
             raw: [
-                (text: "Story A", href: "https://example.com/a"),
-                (text: "  Story A dup  ", href: "/a"),
-                (text: "", href: "https://example.com/empty-title"),
+                (text: "Story A", href: "https://out.com/a"),
+                (text: "  Story A dup  ", href: "https://out.com/a"),
+                (text: "", href: "https://out.com/empty-title"),
                 (text: "Skip fragment", href: "#section"),
                 (text: "Skip script", href: "javascript:alert(1)"),
-                (text: "Relative story", href: "/rel")
+                (text: "Same-host nav", href: "/news"),
+                (text: "Relative story", href: "//other.org/rel")
             ],
             base: base
         )
-        check(anchors.map(\.url) == ["https://example.com/a", "https://example.com/rel"]
-            && anchors.first?.title == "Story A", "anchor filtering dedup, fragments, scripts, relative resolution")
+        check(anchors.map(\.url) == ["https://out.com/a", "https://other.org/rel"]
+            && anchors.first?.title == "Story A", "anchor filtering dedup, fragments, scripts, external hosts only")
 
         let cleaned = PageFetcher.removingHiddenElements(
             "<p>visible</p>"

@@ -288,11 +288,12 @@ enum PageFetcher {
         return nil
     }
 
-    // Anchor (title, URL) pairs for digest linking: http(s) only, relative
-    // hrefs resolved against the page, fragments/empties dropped, capped.
+    // Anchor (title, URL) pairs for digest linking: external-host targets
+    // only — same-host nav/self links crowd actual stories out of the cap.
     static func filteredAnchors(raw: [(text: String, href: String)], base: URL) -> [FetchedPage.Link] {
         var seen = Set<String>()
         var result: [FetchedPage.Link] = []
+        let pageHost = base.host()?.lowercased()
         for pair in raw {
             let title = pair.text
                 .split(whereSeparator: \.isNewline).first.map(String.init)?
@@ -301,8 +302,9 @@ enum PageFetcher {
             guard let url = URL(string: pair.href, relativeTo: base)?.absoluteURL,
                   let scheme = url.scheme?.lowercased(),
                   scheme == "http" || scheme == "https",
-                  url.host() != nil
+                  let urlHost = url.host()?.lowercased()
             else { continue }
+            if urlHost == pageHost { continue }
             let key = url.absoluteString
             guard seen.insert(key).inserted else { continue }
             result.append(FetchedPage.Link(title: title, url: key))
