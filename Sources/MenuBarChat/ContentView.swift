@@ -627,7 +627,10 @@ struct MessageView: View, Equatable {
                 if !message.text.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         if message.viaCommand, let name = message.commandName,
-                           PromptComposer.isLongPaste(message.text) {
+                           // Fold by visual size: the /news prompt is a
+                           // single long paragraph with no newlines.
+                           message.text.split(separator: "\n", omittingEmptySubsequences: false).count > 5
+                               || message.text.count > 100 {
                             // Display-only fold: the full text still goes to
                             // the request; paste classification is untouched.
                             HStack(spacing: 10) {
