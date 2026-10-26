@@ -563,7 +563,9 @@ struct MessageView: View, Equatable {
         message.reasoning.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
     }
 
-    private var needsFold: Bool { reasoningLines.count > 5 }
+    private var needsFold: Bool {
+        reasoningLines.count > 5 || message.reasoning.count > 100
+    }
 
     private var foldLabel: String {
         let suffix: String
@@ -666,7 +668,12 @@ struct MessageView: View, Equatable {
                             .italic()
                             .foregroundStyle(.secondary)
                             .buttonStyle(.plain)
-                        } else if message.role == .user && message.pasteID > 0 {
+                        } else if message.role == .user,
+                                  // Attachment pastes plus any visually
+                                  // long user text share the fold card.
+                                  message.pasteID > 0
+                                      || message.text.split(separator: "\n", omittingEmptySubsequences: false).count > 5
+                                      || message.text.count > 100 {
                             HStack(spacing: 10) {
                                 Image(systemName: "doc.text")
                                     .font(.callout)
@@ -687,7 +694,8 @@ struct MessageView: View, Equatable {
                             if message.isTextExpanded {
                                 Text(message.text)
                             }
-                            Button("\(message.isTextExpanded ? "Less" : "More"), ID\(message.pasteID)p") {
+                            Button((message.isTextExpanded ? "Less" : "More")
+                                + (message.pasteID > 0 ? ", ID\(message.pasteID)p" : "")) {
                                 if let index = chat.messages.firstIndex(where: { $0.id == message.id }) {
                                     chat.messages[index].isTextExpanded.toggle()
                                 }
