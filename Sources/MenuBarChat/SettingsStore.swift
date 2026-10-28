@@ -92,11 +92,12 @@ final class SettingsStore: ObservableObject {
             pick the top 15 STEM stories (title + one-line summary + source); \
             and give every STEM entry 2-3 lines below the title (up to 5 \
             lines when the story is exceptionally popular or important). \
-            Format STEM entries as: **[Title](URL)** — one-line summary; \
-            when the URL is uncertain, use **Title** — summary. \
+            Format STEM entries as: N. **[Title](URL)** — one-line \
+            summary; when the URL is uncertain, use N. **Title** — \
+            summary. \
             Follow with the top 15 general news stories, formatted the \
-            same way except with plain (not bold) titles: [Title](URL) — \
-            one-line summary; when the URL is uncertain, use Title — \
+            same way except with plain (not bold) titles: N. [Title](URL) \
+            — one-line summary; when the URL is uncertain, use N. Title — \
             summary. Use only URLs from the Links lists, and attach the \
             most plausible anchor even when the title is paraphrased — \
             omit the link only when no plausible candidate exists. Each \
