@@ -6,12 +6,16 @@ struct ContentView: View {
     @FocusState private var focused: Bool
 
     private func scrollToBottom(proxy: ScrollViewProxy, chat: ChatModel) {
-        let placeholderVisible = chat.isStreaming
-            && (chat.messages.last?.role != .assistant || (chat.messages.last?.text ?? "").isEmpty)
-        if placeholderVisible {
-            proxy.scrollTo("placeholder", anchor: .bottom)
-        } else if let last = chat.messages.last {
-            proxy.scrollTo(last.id, anchor: .bottom)
+        // Run after the layout pass: scrolling against mid-growth content
+        // (fetch previews landing one by one) overshoots into blank space.
+        DispatchQueue.main.async {
+            let placeholderVisible = chat.isStreaming
+                && (chat.messages.last?.role != .assistant || (chat.messages.last?.text ?? "").isEmpty)
+            if placeholderVisible {
+                proxy.scrollTo("placeholder", anchor: .bottom)
+            } else if let last = chat.messages.last {
+                proxy.scrollTo(last.id, anchor: .bottom)
+            }
         }
     }
 
@@ -137,6 +141,9 @@ struct ContentView: View {
                                 )
                         }
                     }
+                    // No rubber-band when content fits the viewport — kills
+                    // the blank-space flash past the bottom edge.
+                    .scrollBounceBehavior(.basedOnSize)
                     .onChange(of: chat.messages) { _, _ in
                         if chat.followsBottom {
                             scrollToBottom(proxy: proxy, chat: chat)
