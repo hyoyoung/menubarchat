@@ -9,11 +9,14 @@ struct ContentView: View {
         // Run after the layout pass: scrolling against mid-growth content
         // (fetch previews landing one by one) overshoots into blank space.
         DispatchQueue.main.async {
-            let placeholderVisible = chat.isStreaming
-                && (chat.messages.last?.role != .assistant || (chat.messages.last?.text ?? "").isEmpty)
-            if placeholderVisible {
+            guard let last = chat.messages.last else { return }
+            // Pin to real, materialized rows only — targeting the synthetic
+            // placeholder before it exists makes ScrollViewReader guess an
+            // offset and jump far off (usually way up).
+            let emptyAssistant = last.role == .assistant && last.text.isEmpty
+            if chat.isStreaming && emptyAssistant {
                 proxy.scrollTo("placeholder", anchor: .bottom)
-            } else if let last = chat.messages.last {
+            } else {
                 proxy.scrollTo(last.id, anchor: .bottom)
             }
         }
