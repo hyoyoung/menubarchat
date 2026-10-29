@@ -149,6 +149,15 @@ struct ContentView: View {
                             scrollToBottom(proxy: proxy, chat: chat)
                         }
                     }
+                    .onChange(of: chat.pendingBottomPin) { _, requested in
+                        guard requested, chat.followsBottom else { return }
+                        chat.pendingBottomPin = false
+                        // Let the re-shown hierarchy commit its first
+                        // layout before pinning.
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            scrollToBottom(proxy: proxy, chat: chat)
+                        }
+                    }
                     .overlay(alignment: .bottom) {
                         if !chat.followsBottom && !chat.messages.isEmpty {
                             Button {

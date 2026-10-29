@@ -72,6 +72,9 @@ final class ChatModel: ObservableObject {
     @Published var stagedImage: Data?
     @Published var pasteNotice: String?
     @Published var followsBottom = true
+    // Panel re-show can restore a stale scroll offset (blank until
+    // scrolled) — the app delegate requests a bottom re-pin on show.
+    @Published var pendingBottomPin = false
 
     let settings = SettingsStore()
 

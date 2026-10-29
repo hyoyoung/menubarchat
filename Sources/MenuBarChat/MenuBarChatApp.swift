@@ -182,6 +182,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             panel.setFrameOrigin(NSPoint(x: x, y: iconFrame.minY - panel.frame.height - 8))
         }
         panel.makeKeyAndOrderFront(nil)
+        if panel === self.panel, chat.followsBottom {
+            chat.pendingBottomPin.toggle()
+        }
     }
 
     private func togglePanel() {
