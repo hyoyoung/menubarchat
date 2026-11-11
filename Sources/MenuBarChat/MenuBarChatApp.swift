@@ -22,6 +22,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         installMainMenu()
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        // Remember the user's chosen slot across launches — without this,
+        // relaunches reassign the position and managers like Hidden Bar
+        // sweep the icon into their hidden zone.
+        statusItem.autosaveName = "MenuBarChatStatusItem"
         statusItem.button?.image = NSImage(systemSymbolName: "ellipsis.bubble", accessibilityDescription: "MenuBarChat")
         statusItem.button?.target = self
         statusItem.button?.action = #selector(statusItemClicked(_:))
