@@ -146,6 +146,9 @@ final class ChatModel: ObservableObject {
             return
         }
         draft = ""
+        // Direct user send resumes bottom-following (spec); queued
+        // auto-drains must not steal the reading position.
+        followsBottom = true
         sendNow(prompt, viaCommand: viaCommand, commandName: commandName, fetchTargets: fetchTargets)
     }
 
@@ -171,6 +174,7 @@ final class ChatModel: ObservableObject {
         guard let index = queuedMessages.firstIndex(where: { $0.id == message.id }) else { return }
         queuedMessages.remove(at: index)
         queuedMessages.insert(message, at: 0)
+        followsBottom = true
         stop()
     }
 
@@ -248,7 +252,6 @@ final class ChatModel: ObservableObject {
             showEmptyKeyHint()
             return
         }
-        followsBottom = true
         messages.append(Message(role: .user, text: prompt))
         if let index = messages.indices.last, viaCommand {
             messages[index].viaCommand = true
